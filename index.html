@@ -1,1093 +1,764 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MedSearch & Study Studio - Index</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            500: '#10b981',
-                            600: '#059669',
-                            700: '#047857',
-                            900: '#064e3b',
-                        }
-                    },
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    }
-                }
-            }
-        }
-    </script>
-    <!-- FontAwesome & Google Fonts -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- PDF.js & Mammoth.js for Document Processing -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>MedSearch Studio – Pesquisa de termos e conceitos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Public+Sans:wght@400;500;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+:root{
+  --bg:#EEF3F5; --surface:#FFFFFF; --ink:#16313B; --muted:#5B7480; --line:#CFDCE2;
+  --def:#2B6CA3; --def-bg:#E6F0F8; --on-def:#FFFFFF; --txt:#23826F; --txt-bg:#E4F4EF;
+  --loc:#B5780F; --loc-bg:#FBF1DC; --tip:#A8456A; --tip-bg:#F8E8EE; --err:#B3261E; --mark:#FFE58A; --on-mark:#3A2A00;
+  --serif:"Fraunces",Georgia,"Times New Roman",serif;
+  --sans:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  box-sizing:border-box;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1D23; --surface:#16272F; --ink:#E4EEF2; --muted:#93AAB5; --line:#2A404A;
+    --def:#6DB0E6; --def-bg:#183446; --on-def:#0F1D23; --txt:#5CC7AF; --txt-bg:#14342E;
+    --loc:#E6B450; --loc-bg:#3A2E14; --tip:#E58BAC; --tip-bg:#3A1C29; --err:#F2B8B5; --mark:#8A6D00; --on-mark:#FFF3C4; color-scheme:dark;
+  }
+}
+*,*::before,*::after{box-sizing:inherit}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.55 var(--sans);overflow:hidden}
+button{font-family:inherit}
+mark{background:var(--mark);color:var(--on-mark);border-radius:3px;padding:0 2px}
 
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
-        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.05); }
-        .dark ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
-        ::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.2); border-radius: 4px; }
-        .dark ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
-        mark.search-highlight {
-            background-color: #fef08a; color: #854d0e; padding: 0.1rem 0.25rem; border-radius: 0.25rem; font-weight: 600;
-        }
-        .dark mark.search-highlight { background-color: #854d0e; color: #fef08a; }
-    </style>
+/* Estrutura */
+.app{height:100vh;height:100dvh;display:grid;grid-template-columns:300px minmax(0,1fr) 420px;grid-template-rows:auto minmax(0,1fr)}
+header{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:9px 14px;padding-top:calc(9px + env(safe-area-inset-top,0px));background:var(--surface);border-bottom:1px solid var(--line)}
+header h1{font:700 17px/1.1 var(--serif);margin:0;display:flex;align-items:baseline;gap:8px}
+header h1 small{font:400 12px var(--sans);color:var(--muted)}
+.esp{flex:1}
+.hb{display:inline-flex;align-items:center;gap:6px;font:600 13px var(--sans);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:7px 11px;cursor:pointer}
+.hb:hover{border-color:var(--def);color:var(--def)}
+.hb.pri{background:var(--def);border-color:var(--def);color:var(--on-def)}
+.hb.pri:hover{color:var(--on-def);opacity:.9}
+.tabs-m{display:none;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.tabs-m button{border:0;background:none;color:var(--muted);font:600 13px var(--sans);padding:7px 11px;cursor:pointer}
+.tabs-m button.on{background:var(--def);color:var(--on-def)}
+
+aside{grid-column:1;grid-row:2;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+body.sb-off aside{display:none}
+body.sb-off .app{grid-template-columns:0 minmax(0,1fr) 420px}
+.stabs{display:flex;border-bottom:1px solid var(--line)}
+.stabs button{flex:1;border:0;border-bottom:3px solid transparent;background:none;color:var(--muted);font:600 13px var(--sans);padding:10px 4px;cursor:pointer}
+.stabs button.on{color:var(--def);border-bottom-color:var(--def)}
+.sbody{flex:1;overflow-y:auto;padding:14px 14px 90px;display:grid;gap:10px;align-content:start}
+.sbody h2{font:600 12px var(--sans);color:var(--muted);margin:4px 0 0;text-transform:uppercase;letter-spacing:.04em}
+.lst{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.conv{display:flex;align-items:center;gap:2px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+.conv.ativa{border-color:var(--def);background:var(--def-bg)}
+.conv .nm{flex:1;text-align:left;font:600 14px var(--sans);color:var(--ink);background:none;border:0;padding:9px 11px;cursor:pointer;overflow-wrap:anywhere;border-radius:10px}
+.conv input{flex:1;font:inherit;padding:7px 9px;border:1px solid var(--def);border-radius:8px;background:var(--surface);color:var(--ink);margin:3px;min-width:0}
+.ib{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;padding:6px 8px;border-radius:6px}
+.ib:hover{color:var(--def)}.ib.perigo:hover,.ib.conf{color:var(--err)}.ib.conf{font:600 12.5px var(--sans)}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:16px 12px;text-align:center;background:var(--bg);transition:border-color .15s,background .15s}
+.drop.over{border-color:var(--def);background:var(--def-bg)}
+.drop.off{opacity:.5;pointer-events:none}
+.drop strong{display:block;font-size:14px}.drop span{font-size:12.5px;color:var(--muted)}
+.linha{display:flex;gap:8px;flex-wrap:wrap}.cen{justify-content:center;margin-top:10px}
+.mini{font:600 13px var(--sans);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer}
+.mini:hover{border-color:var(--def);color:var(--def)}
+.files li{border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;grid-template-columns:1fr auto;gap:1px 8px;align-items:center;font-size:13.5px}
+.files .fn{font-weight:600;overflow-wrap:anywhere;cursor:pointer;background:none;border:0;text-align:left;color:var(--ink);padding:0;font-size:13.5px}
+.files .fn:hover{color:var(--def)}
+.files .mt{grid-column:1;color:var(--muted);font-size:12.5px}.files .ib{grid-row:1/3;grid-column:2}
+.warn{color:var(--loc)!important}
+.nota{font-size:13px;color:var(--muted)}
+.hist{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:0;background:none;color:var(--ink);font:inherit;font-size:14px;padding:7px 9px;border-radius:8px;cursor:pointer}
+.hist:hover{background:var(--def-bg);color:var(--def)}
+.badge{font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);padding:10px 14px;display:grid;gap:3px}
+.badge b{color:var(--ink)}
+
+/* Centro */
+main{grid-column:2;grid-row:2;display:flex;flex-direction:column;min-height:0;min-width:0}
+#head{padding:12px 20px;border-bottom:1px solid var(--line);background:var(--surface)}
+#head h2{font:700 19px/1.2 var(--serif);margin:0}#head .nota{margin-top:2px}
+.filtros{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;padding:9px 20px;border-bottom:1px solid var(--line);background:var(--bg);font-size:13.5px}
+.filtros label{display:flex;align-items:center;gap:6px;color:var(--ink)}
+.filtros select{font:inherit;font-size:13.5px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:4px 8px;max-width:260px}
+#chat{flex:1;overflow-y:auto;padding:20px 20px 10px}
+.inner{max-width:780px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+.vazio{text-align:center;color:var(--muted);margin-top:6vh}
+.vazio h2{font:700 clamp(24px,4vw,34px)/1.1 var(--serif);color:var(--ink);margin:0 0 8px}
+.passos{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px;text-align:left}
+.passos div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13.5px}
+.passos b{display:block;color:var(--def);margin-bottom:2px}
+.eu{align-self:flex-end;background:var(--def);color:var(--on-def);border-radius:14px 14px 4px 14px;padding:9px 15px;max-width:80%;overflow-wrap:anywhere}
+.status{color:var(--muted);font-size:14px}
+.resp{display:flex;flex-direction:column;gap:12px}
+.termo{font:700 clamp(22px,4vw,30px)/1.1 var(--serif);margin:0}
+.tema{color:var(--muted);font-size:13.5px;margin-top:-6px}
+.sec{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--c);border-radius:4px 12px 12px 4px;overflow:hidden}
+.sec>h3{margin:0;padding:10px 16px;background:var(--cb);color:var(--c);font:600 16px/1.2 var(--serif);display:flex;gap:10px;align-items:center}
+.sec .b{padding:13px 18px 16px}
+.sec p{margin:0 0 8px;max-width:70ch}.sec p:last-child{margin:0}
+.s1{--c:var(--def);--cb:var(--def-bg)}.s2{--c:var(--txt);--cb:var(--txt-bg)}
+.s3{--c:var(--loc);--cb:var(--loc-bg)}.s4{--c:var(--tip);--cb:var(--tip-bg)}
+.def{font:500 18px/1.5 var(--serif)}
+.tr{margin:0 0 10px;padding:9px 13px;border-radius:8px;background:var(--bg);border:1px solid var(--line)}
+.tr .tag{display:inline-block;font:600 12px var(--sans);color:var(--txt);background:var(--txt-bg);border-radius:999px;padding:1px 9px;margin-right:6px}
+.tr .tx{font-style:italic}.tr .on{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px;font-size:13px;color:var(--muted)}
+.abrir{font:600 12.5px var(--sans);border:1px solid var(--def);background:var(--def-bg);color:var(--def);border-radius:8px;padding:4px 10px;cursor:pointer}
+.abrir:hover{background:var(--def);color:var(--on-def)}
+.roll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14.5px}
+th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line)}
+th{font-size:12.5px;color:var(--muted);font-weight:600}tr:last-child td{border-bottom:0}
+.pg{font-weight:600;color:var(--loc);white-space:nowrap}
+ul.dicas{margin:0;padding-left:20px;display:grid;gap:6px}
+.orig{display:inline-block;margin-top:10px;font-size:12.5px;border:1px dashed var(--tip);color:var(--tip);border-radius:6px;padding:2px 9px}
+.aviso{border:1px solid var(--loc);background:var(--loc-bg);border-radius:10px;padding:11px 15px}
+.aviso a{color:var(--def);font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{font:inherit;font-size:13.5px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 13px;cursor:pointer}
+.chip:hover{border-color:var(--def);color:var(--def)}
+form{border-top:1px solid var(--line);background:var(--surface);padding:12px 20px calc(12px + env(safe-area-inset-bottom,0px))}
+form .row{max-width:780px;margin:0 auto;display:flex;gap:10px;align-items:flex-end}
+textarea{flex:1;resize:none;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:10px 13px;max-height:140px;min-height:44px}
+textarea:focus,input:focus,select:focus{outline:2px solid var(--def);outline-offset:1px}
+textarea:disabled{opacity:.6}
+.btn{font:600 15px var(--sans);border:0;border-radius:12px;background:var(--def);color:var(--on-def);padding:11px 20px;cursor:pointer;min-height:44px}
+.btn:disabled{opacity:.5;cursor:default}
+.btn.sec2{background:none;color:var(--muted);border:1px solid var(--line)}
+
+/* Leitor */
+.reader{grid-column:3;grid-row:2;background:var(--surface);border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0;min-width:0}
+body.sb-off .reader{grid-column:3}
+.rh{padding:12px 14px;border-bottom:1px solid var(--line)}
+.rh strong{display:block;font:600 15px var(--serif);overflow-wrap:anywhere}
+.rh .nota{margin-top:2px}
+.rnav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid var(--line);background:var(--bg)}
+.rnav input{width:70px;font:inherit;font-size:13.5px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.rbody{flex:1;overflow-y:auto;padding:14px;display:grid;gap:12px;align-content:start;font-family:var(--serif);font-size:15px;line-height:1.7}
+.rbody .vz{font-family:var(--sans);color:var(--muted);text-align:center;margin-top:12vh}
+.pgbox{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--surface)}
+.pgbox .ph{font:600 12px var(--sans);color:var(--muted);margin-bottom:4px;display:block}
+.pgbox.alvo{border-color:var(--loc);background:var(--loc-bg);box-shadow:inset 4px 0 0 var(--loc)}
+.pgbox.alvo .ph{color:var(--loc)}
+
+/* Nova conversa + modais */
+.novo{position:fixed;left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;font:600 14.5px var(--sans);
+  background:var(--def);color:var(--on-def);border:0;border-radius:999px;padding:11px 18px;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.22)}
+.pop{position:fixed;left:16px;bottom:calc(72px + env(safe-area-inset-bottom,0px));z-index:31;width:min(310px,calc(100vw - 32px));
+  background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.28);display:grid;gap:10px}
+.pop[hidden],.modal[hidden]{display:none}
+.pop h3{margin:0;font:700 17px var(--serif)}.pop label{font-size:13px;color:var(--muted)}
+.pop input,.modal input[type=password]{width:100%;font:inherit;padding:9px 11px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.pop .acoes{display:flex;gap:8px;justify-content:flex-end}
+.pop .btn{padding:8px 16px;min-height:38px;font-size:14px}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(5,15,20,.6);display:flex;align-items:center;justify-content:center;padding:16px}
+.mbox{background:var(--surface);border:1px solid var(--line);border-radius:16px;max-width:480px;width:100%;padding:20px;display:grid;gap:12px;max-height:90vh;overflow-y:auto}
+.mbox h3{margin:0;font:700 19px var(--serif)}
+.mbox p{margin:0;font-size:14px}
+.ovl{display:none}
+button:focus-visible,summary:focus-visible{outline:3px solid var(--def);outline-offset:2px}
+
+@media (max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  main,.reader{grid-column:1}
+  .reader{display:none}
+  body.leitor main{display:none}body.leitor .reader{display:flex}
+  .tabs-m{display:flex}header h1 small,.hb span.t{display:none}
+  aside{position:fixed;z-index:40;top:0;bottom:0;left:0;width:min(330px,88vw);transform:translateX(-102%);transition:transform .2s;box-shadow:0 0 30px rgba(0,0,0,.35)}
+  body.sb-open aside{transform:none}body.sb-off aside{display:flex}
+  body.sb-off .app{grid-template-columns:minmax(0,1fr)}
+  body.sb-open .ovl{display:block;position:fixed;inset:0;z-index:35;background:rgba(5,15,20,.55)}
+  .passos{grid-template-columns:1fr}
+}
+</style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200 overflow-hidden">
+<body>
+<div class="app">
+  <header>
+    <button class="hb" id="bSb" type="button" aria-label="Abrir ou fechar o menu lateral">☰</button>
+    <h1>MedSearch Studio <small>pesquisa de termos nos seus arquivos</small></h1>
+    <span class="esp"></span>
+    <div class="tabs-m" role="tablist"><button id="tmChat" class="on" type="button">Chat</button><button id="tmLeitor" type="button">Leitor</button></div>
+    <button class="hb pri" id="bAdd" type="button">＋ <span class="t">Adicionar arquivos</span></button>
+    <button class="hb" id="bAjuda" type="button">? <span class="t">Como usar</span></button>
+    <button class="hb" id="bDados" type="button">⚙ <span class="t">Backup e IA</span></button>
+  </header>
 
-    <!-- Header Principal -->
-    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 h-16 flex items-center justify-between px-4 sm:px-6 z-20 shrink-0">
-        <div class="flex items-center space-x-3">
-            <button onclick="toggleSidebar()" class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl md:hidden">
-                <i class="fa-solid fa-bars text-lg"></i>
-            </button>
-            <div class="bg-brand-600 text-white p-2.5 rounded-xl shadow-md">
-                <i class="fa-solid fa-book-bookmark text-xl"></i>
-            </div>
-            <div>
-                <h1 class="font-bold text-base sm:text-lg leading-tight tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
-                    MedSearch Studio <span class="text-[10px] bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300 font-semibold px-2 py-0.5 rounded-full border border-brand-200 dark:border-brand-700">Index DB</span>
-                </h1>
-                <p class="text-xs text-slate-500 dark:text-slate-400 hidden sm:block">Plataforma Didática de Pesquisa em Arquivos com Suporte na Nuvem</p>
-            </div>
-        </div>
-
-        <div class="flex items-center space-x-2 sm:space-x-3">
-            <!-- Botão de Tutorial / Guia Prático -->
-            <button onclick="openTutorialModal()" class="px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
-                <i class="fa-solid fa-circle-question"></i>
-                <span class="hidden sm:inline">Como Usar</span>
-            </button>
-
-            <!-- Botão de Upload Direto no Header -->
-            <button onclick="triggerDirectUpload()" class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition">
-                <i class="fa-solid fa-cloud-arrow-up"></i>
-                <span>Upload de Arquivos</span>
-            </button>
-            <input type="file" id="direct-file-input" multiple accept=".txt,.md,.pdf,.docx" class="hidden" onchange="handleFileUpload(event)">
-
-            <!-- Botão para Expandir/Recolher Barra Lateral -->
-            <button onclick="toggleDesktopSidebar()" id="desktop-sidebar-btn" class="hidden md:flex items-center space-x-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-medium transition" title="Expandir/Recolher Barra Lateral">
-                <i class="fa-solid fa-sidebar text-brand-500"></i>
-                <span id="sidebar-btn-text">Recolher Menu</span>
-            </button>
-
-            <!-- Badge Status Sincronização / Backup -->
-            <div id="cloud-sync-status" class="hidden sm:flex items-center space-x-1.5 px-3 py-1 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-full text-xs font-medium">
-                <i class="fa-solid fa-database text-[10px] animate-pulse"></i>
-                <span id="sync-text">Banco Ativo</span>
-            </div>
-
-            <!-- Botão de Configurações da API Key -->
-            <button onclick="openSettingsModal()" class="p-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition" title="Configurar Chave da API">
-                <i class="fa-solid fa-key text-base"></i>
-            </button>
-
-            <!-- Toggle Tema -->
-            <button onclick="toggleTheme()" class="p-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition" title="Alternar Tema">
-                <i class="fa-solid fa-moon dark:hidden text-base"></i>
-                <i class="fa-solid fa-sun hidden dark:block text-base text-amber-400"></i>
-            </button>
-        </div>
-    </header>
-
-    <!-- Layout Principal com Sidebar Redimensionável -->
-    <div class="flex-1 flex overflow-hidden relative">
-
-        <!-- Sidebar Lateral Retrátil -->
-        <aside id="sidebar" class="absolute md:relative inset-y-0 left-0 z-30 w-72 min-w-[220px] max-w-[480px] bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col transition-all duration-300 -translate-x-full md:translate-x-0 shadow-lg md:shadow-none select-none">
-            <!-- Header Sidebar -->
-            <div class="p-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between shrink-0">
-                <h2 class="font-semibold text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                    <i class="fa-solid fa-folder-open text-brand-500"></i> Seus Estudos
-                </h2>
-                <button onclick="createNewChat()" class="bg-brand-600 hover:bg-brand-700 text-white px-2.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-sm transition">
-                    <i class="fa-solid fa-plus text-xs"></i> Novo Chat
-                </button>
-            </div>
-
-            <!-- Abas da Sidebar -->
-            <div class="flex border-b border-slate-200 dark:border-slate-700 text-xs font-medium bg-slate-50/50 dark:bg-slate-900/30 shrink-0">
-                <button onclick="switchSidebarTab('chats')" id="tab-btn-chats" class="flex-1 py-2 text-center border-b-2 border-brand-500 text-brand-600 dark:text-brand-400 font-semibold">
-                    <i class="fa-solid fa-comments mr-1"></i> Chats
-                </button>
-                <button onclick="switchSidebarTab('files')" id="tab-btn-files" class="flex-1 py-2 text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
-                    <i class="fa-solid fa-file-lines mr-1"></i> Arquivos
-                </button>
-                <button onclick="switchSidebarTab('history')" id="tab-btn-history" class="flex-1 py-2 text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
-                    <i class="fa-solid fa-clock-rotate-left mr-1"></i> Histórico
-                </button>
-            </div>
-
-            <!-- Conteúdo: Lista de Chats -->
-            <div id="sidebar-tab-chats" class="sidebar-tab-content flex-1 overflow-y-auto p-3 space-y-1.5">
-                <div id="chats-list" class="space-y-1.5"></div>
-            </div>
-
-            <!-- Conteúdo: Arquivos do Chat -->
-            <div id="sidebar-tab-files" class="sidebar-tab-content flex-1 overflow-y-auto p-3 space-y-2 hidden">
-                <div class="flex items-center justify-between mb-2">
-                    <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Documentos no Chat Atual</span>
-                    <button onclick="triggerDirectUpload()" class="text-brand-600 hover:underline text-xs"><i class="fa-solid fa-plus"></i> Adicionar</button>
-                </div>
-                <div id="sidebar-files-list" class="space-y-1.5"></div>
-            </div>
-
-            <!-- Conteúdo: Histórico -->
-            <div id="sidebar-tab-history" class="sidebar-tab-content flex-1 overflow-y-auto p-3 space-y-2 hidden">
-                <div id="sidebar-history-list" class="space-y-1.5 text-xs"></div>
-            </div>
-
-            <!-- Footer Sidebar: Painel de Backup & Banco de Dados -->
-            <div class="p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 flex flex-col gap-2 text-xs shrink-0">
-                <div class="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                    <span><i class="fa-solid fa-floppy-disk text-brand-500 mr-1"></i> Backup & Dados</span>
-                    <span id="backup-mode-badge" class="text-[9px] bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded text-slate-600 dark:text-slate-300">Auto Save</span>
-                </div>
-                <div class="grid grid-cols-2 gap-1.5">
-                    <button onclick="exportBackup()" class="bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 p-2 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center gap-1 font-medium text-[11px] transition">
-                        <i class="fa-solid fa-download text-brand-500"></i> Baixar JSON
-                    </button>
-                    <label class="bg-white dark:bg-slate-700 hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 p-2 rounded-lg border border-slate-200 dark:border-slate-600 flex items-center justify-center gap-1 font-medium text-[11px] cursor-pointer transition">
-                        <i class="fa-solid fa-upload text-brand-500"></i> Restaurar
-                        <input type="file" id="import-file-input" accept=".json" class="hidden" onchange="importBackup(event)">
-                    </label>
-                </div>
-            </div>
-
-            <!-- Barra Lateral Redimensionável -->
-            <div id="sidebar-resizer" class="hidden md:block absolute top-0 right-0 w-1.5 h-full cursor-col-resize hover:bg-brand-500/50 active:bg-brand-500 transition-colors z-40"></div>
-        </aside>
-
-        <!-- Overlay Mobile -->
-        <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/40 z-20 hidden md:hidden"></div>
-
-        <!-- Área Central (Chat e Pesquisa) + Painel Direito (Leitor) -->
-        <main class="flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-50 dark:bg-slate-900">
-            
-            <!-- Painel Principal de Estudo / Chat -->
-            <div class="flex-1 flex flex-col h-full overflow-hidden border-r border-slate-200 dark:border-slate-700 min-w-[320px]">
-                
-                <!-- Barra Superior do Chat Ativo -->
-                <div class="bg-white dark:bg-slate-800 px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between shrink-0">
-                    <div class="flex items-center space-x-3 overflow-hidden">
-                        <span class="w-2.5 h-2.5 rounded-full bg-brand-500"></span>
-                        <h3 id="current-chat-title" class="font-semibold text-sm text-slate-900 dark:text-white truncate">Carregando Tópico...</h3>
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <button onclick="triggerDirectUpload()" class="bg-brand-50 dark:bg-brand-950/50 hover:bg-brand-100 text-brand-700 dark:text-brand-300 border border-brand-200 dark:border-brand-800 px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition">
-                            <i class="fa-solid fa-folder-plus"></i>
-                            <span>Adicionar Arquivo</span>
-                        </button>
-                        <button onclick="toggleRightPanel()" id="toggle-reader-btn" class="bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 transition">
-                            <i class="fa-solid fa-book-open text-brand-500"></i>
-                            <span id="reader-btn-text">Leitor</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Banner Orientativo Curto -->
-                <div class="bg-brand-50/60 dark:bg-brand-950/20 px-4 py-2 border-b border-brand-100 dark:border-brand-900/40 text-xs text-brand-800 dark:text-brand-300 flex items-center justify-between shrink-0">
-                    <span class="flex items-center gap-1.5 truncate">
-                        <i class="fa-solid fa-lightbulb"></i>
-                        <strong>Passo 1:</strong> Adicione arquivos (PDF, DOCX, TXT). <strong>Passo 2:</strong> Digite o termo desejado para pesquisar.
-                    </span>
-                    <button onclick="openTutorialModal()" class="underline font-semibold hover:text-brand-600 shrink-0 ml-2">Ver Tutorial</button>
-                </div>
-
-                <!-- Histórico de Mensagens / Conversa -->
-                <div id="chat-messages" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4"></div>
-
-                <!-- Campo de Pesquisa e Envio -->
-                <div class="p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shrink-0">
-                    <form onsubmit="handleSendMessage(event)" class="flex items-center space-x-2">
-                        <div class="relative flex-1">
-                            <input type="text" id="user-input" placeholder="Digite o termo para buscar no arquivo (ex: 'anamnese') ou faça uma pergunta..." class="w-full pl-4 pr-10 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 transition">
-                            <button type="button" onclick="triggerDirectUpload()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-brand-500" title="Upload de Arquivo">
-                                <i class="fa-solid fa-paperclip text-base"></i>
-                            </button>
-                        </div>
-                        <button type="submit" id="send-btn" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-3 rounded-xl font-medium text-sm flex items-center justify-center shadow-md transition shrink-0">
-                            <i class="fa-solid fa-magnifying-glass mr-1.5"></i>
-                            <span>Pesquisar</span>
-                        </button>
-                    </form>
-                </div>
-
-            </div>
-
-            <!-- Painel Direito: Leitor Direto no Contexto -->
-            <div id="right-panel" class="w-full md:w-[450px] lg:w-[520px] bg-white dark:bg-slate-800 flex flex-col h-full border-t md:border-t-0 border-slate-200 dark:border-slate-700 shrink-0">
-                <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
-                    <div class="flex items-center space-x-2 truncate">
-                        <i class="fa-solid fa-file-contract text-brand-500"></i>
-                        <span id="reader-title" class="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">Visualizador de Documentos</span>
-                    </div>
-                    <span id="reader-badge" class="text-[10px] bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300 font-mono hidden">Trecho Localizado</span>
-                </div>
-
-                <div id="reader-container" class="flex-1 p-6 overflow-y-auto font-mono text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap select-text">
-                    <div class="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-center p-6 font-sans">
-                        <i class="fa-solid fa-book-open-reader text-4xl mb-3 opacity-30"></i>
-                        <p class="text-sm font-medium">Nenhum documento selecionado</p>
-                        <p class="text-xs mt-1">Quando você pesquisar um termo e ele for encontrado em um arquivo, o texto abrirá direto nesta aba destacado em amarelo.</p>
-                    </div>
-                </div>
-
-                <div class="p-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-700 text-xs text-slate-500 dark:text-slate-400 flex justify-between items-center">
-                    <span id="reader-footer-info">Pronto para leitura</span>
-                    <button onclick="closeReader()" class="hover:text-slate-900 dark:hover:text-white font-medium">Ocultar</button>
-                </div>
-            </div>
-
-        </main>
-
+  <aside>
+    <div class="stabs" role="tablist">
+      <button id="stConv" class="on" type="button">Conversas</button>
+      <button id="stArq" type="button">Arquivos (<span id="nArq">0</span>)</button>
+      <button id="stBusca" type="button">Buscas</button>
     </div>
+    <div class="sbody" id="sbody"></div>
+    <div class="badge" id="badge"></div>
+  </aside>
 
-    <!-- Modal Tutorial Didático / Como Usar -->
-    <div id="tutorial-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-xl w-full p-6 border border-slate-200 dark:border-slate-700 shadow-2xl flex flex-col max-h-[90vh]">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
-                <div class="flex items-center space-x-2 text-brand-600 dark:text-brand-400">
-                    <i class="fa-solid fa-graduation-cap text-xl"></i>
-                    <h3 class="font-bold text-slate-900 dark:text-white text-base">Guia Didático: Como Usar a Página</h3>
-                </div>
-                <button onclick="closeTutorialModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <div class="mt-4 flex-1 overflow-y-auto space-y-4 text-xs sm:text-sm text-slate-600 dark:text-slate-300 pr-1">
-                <div class="flex gap-3 items-start p-3 bg-brand-50/50 dark:bg-brand-950/30 rounded-xl border border-brand-100 dark:border-brand-900/40">
-                    <span class="w-6 h-6 rounded-full bg-brand-600 text-white font-bold text-xs flex items-center justify-center shrink-0">1</span>
-                    <div>
-                        <h4 class="font-bold text-slate-900 dark:text-white mb-0.5">Adicione seus Arquivos de Estudo</h4>
-                        <p>Clique no botão <strong>"Upload de Arquivos"</strong> no topo da página e selecione seus PDFs, arquivos Word (.docx), textos (.txt) ou resumos em Markdown.</p>
-                    </div>
-                </div>
-
-                <div class="flex gap-3 items-start p-3 bg-brand-50/50 dark:bg-brand-950/30 rounded-xl border border-brand-100 dark:border-brand-900/40">
-                    <span class="w-6 h-6 rounded-full bg-brand-600 text-white font-bold text-xs flex items-center justify-center shrink-0">2</span>
-                    <div>
-                        <h4 class="font-bold text-slate-900 dark:text-white mb-0.5">Pesquise Qualquer Termo ou Palavra-Chave</h4>
-                        <p>Digite palavras como <em>"anamnese"</em>, <em>"sopro cardíaco"</em> ou <em>"tratamento"</em> na barra de pesquisa. O assistente vasculhará todos os trechos salvos no chat.</p>
-                    </div>
-                </div>
-
-                <div class="flex gap-3 items-start p-3 bg-brand-50/50 dark:bg-brand-950/30 rounded-xl border border-brand-100 dark:border-brand-900/40">
-                    <span class="w-6 h-6 rounded-full bg-brand-600 text-white font-bold text-xs flex items-center justify-center shrink-0">3</span>
-                    <div>
-                        <h4 class="font-bold text-slate-900 dark:text-white mb-0.5">Leitura e Abertura Direta no Contexto</h4>
-                        <p>Ao encontrar o termo, clique em <strong>"Abrir trecho"</strong> na mensagem do chat. O arquivo abrirá no painel da direita rolando direto para o parágrafo marcado em amarelo.</p>
-                    </div>
-                </div>
-
-                <div class="flex gap-3 items-start p-3 bg-brand-50/50 dark:bg-brand-950/30 rounded-xl border border-brand-100 dark:border-brand-900/40">
-                    <span class="w-6 h-6 rounded-full bg-brand-600 text-white font-bold text-xs flex items-center justify-center shrink-0">4</span>
-                    <div>
-                        <h4 class="font-bold text-slate-900 dark:text-white mb-0.5">Busca Inteligente Externa & Backup Garantido</h4>
-                        <p>Se o termo não estiver no arquivo, o assistente fará uma busca web com IA. Tudo é salvo no banco de dados e você pode fazer download do arquivo JSON de backup a qualquer momento no menu lateral.</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-5 pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-end">
-                <button onclick="closeTutorialModal()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2 rounded-xl text-xs font-semibold shadow-md">
-                    Entendi, Começar Estudos!
-                </button>
-            </div>
-        </div>
+  <main>
+    <div id="head"></div>
+    <div class="filtros">
+      <label>Buscar em:
+        <select id="fDoc" aria-label="Documento a pesquisar"><option value="ALL">Todos os arquivos da conversa</option></select>
+      </label>
+      <label><input type="checkbox" id="fExato"> Palavra exata</label>
+      <label><input type="checkbox" id="fExt" checked> Link de pesquisa externa se não achar</label>
     </div>
-
-    <!-- Modal da API Key -->
-    <div id="settings-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-6 border border-slate-200 dark:border-slate-700 shadow-2xl">
-            <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-700">
-                <h3 class="font-bold text-slate-900 dark:text-white text-base">Configurações de IA e Banco</h3>
-                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-            <div class="mt-4 space-y-4">
-                <div>
-                    <label class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Chave da API Gemini (Opcional)</label>
-                    <input type="password" id="api-key-input" placeholder="AIzaSy..." class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500">
-                </div>
-                <p class="text-xs text-slate-500 dark:text-slate-400">
-                    Sua chave serve para realizar buscas acadêmicas complementares na web caso o termo não esteja nos arquivos do livro.
-                </p>
-            </div>
-            <div class="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700 flex justify-end space-x-2">
-                <button onclick="closeSettingsModal()" class="px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl">Cancelar</button>
-                <button onclick="saveApiKey()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2 rounded-xl text-sm font-medium shadow-md">Salvar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Notificação Toast -->
-    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white dark:bg-white dark:text-slate-900 px-4 py-3 rounded-xl shadow-2xl text-xs font-medium transform translate-y-20 opacity-0 transition-all duration-300 flex items-center space-x-2 z-50">
-        <i id="toast-icon" class="fa-solid fa-circle-info text-brand-400"></i>
-        <span id="toast-msg">Notificação</span>
-    </div>
-
-    <!-- Firebase e Lógica JavaScript Completa da Aplicação -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Inicialização do Firebase com Fallback
-        let db = null;
-        let auth = null;
-        let currentUserId = 'local_user';
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'medsearch-index-app';
-
-        async function initFirebase() {
-            try {
-                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                    const firebaseConfig = JSON.parse(__firebase_config);
-                    const app = initializeApp(firebaseConfig);
-                    db = getFirestore(app);
-                    auth = getAuth(app);
-
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                    currentUserId = auth.currentUser?.uid || 'user_' + Date.now();
-                    document.getElementById('sync-text').innerText = "Nuvem Firebase";
-                } else {
-                    document.getElementById('sync-text').innerText = "Banco Local";
-                }
-            } catch (err) {
-                console.warn("Firebase não disponível ou offline. Operando em modo de backup local:", err);
-                document.getElementById('sync-text').innerText = "Modo Offline / Local";
-            }
-        }
-
-        window.saveToDatabase = async function() {
-            // 1. Sempre salva no LocalStorage como backup imediato
-            try {
-                localStorage.setItem('medsearch_app_state', JSON.stringify(window.appState));
-            } catch (e) {
-                console.warn("Cota de localStorage excedida.", e);
-            }
-
-            // 2. Se Firebase estiver disponível, sincroniza na nuvem
-            if (db && auth?.currentUser) {
-                try {
-                    const docRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'studyData', 'state');
-                    await setDoc(docRef, {
-                        chats: window.appState.chats,
-                        searchHistory: window.appState.searchHistory,
-                        updatedAt: Date.now()
-                    });
-                    document.getElementById('sync-text').innerText = "Sincronizado na Nuvem";
-                } catch (e) {
-                    console.error("Erro ao salvar no Firestore:", e);
-                    document.getElementById('sync-text').innerText = "Salvo Localmente";
-                }
-            }
-        };
-
-        window.loadFromDatabase = async function() {
-            // Tenta Firestore primeiro se configurado
-            if (db && auth?.currentUser) {
-                try {
-                    const docRef = doc(db, 'artifacts', appId, 'users', currentUserId, 'studyData', 'state');
-                    const snap = await getDoc(docRef);
-                    if (snap.exists()) {
-                        const data = snap.data();
-                        if (data.chats) {
-                            window.appState.chats = data.chats;
-                            window.appState.searchHistory = data.searchHistory || [];
-                            return;
-                        }
-                    }
-                } catch (e) {
-                    console.warn("Falha ao carregar da nuvem, recorrendo ao backup local:", e);
-                }
-            }
-
-            // Fallback: Carrega do LocalStorage
-            const saved = localStorage.getItem('medsearch_app_state');
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    if (parsed.chats && parsed.chats.length > 0) {
-                        window.appState.chats = parsed.chats;
-                        window.appState.searchHistory = parsed.searchHistory || [];
-                    }
-                } catch (e) {
-                    console.error("Erro ao ler LocalStorage:", e);
-                }
-            }
-        };
-
-        window.addEventListener('DOMContentLoaded', async () => {
-            await initFirebase();
-            await window.loadFromDatabase();
-            window.renderChatsList();
-            window.renderActiveChat();
-            window.renderSidebarFilesList();
-            window.renderSidebarHistory();
-        });
-    </script>
-
-    <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-        // Estado Global
-        window.appState = {
-            chats: [
-                {
-                    id: 'chat_default',
-                    title: 'Semiologia e Estudo Médico',
-                    createdAt: Date.now(),
-                    files: [],
-                    messages: [
-                        {
-                            role: 'assistant',
-                            text: 'Bem-vindo ao MedSearch Studio! Adicione um arquivo do seu livro ou artigo clicando no botão **"Upload de Arquivos"** no topo. Depois, digite uma palavra-chave (como *anamnese*) para encontrar e abrir os trechos explicativos diretos.',
-                            sources: []
-                        }
-                    ]
-                }
-            ],
-            activeChatId: 'chat_default',
-            apiKey: localStorage.getItem('medsearch_api_key') || '',
-            searchHistory: [],
-            sidebarCollapsed: false,
-            rightPanelOpen: true
-        };
-
-        // Funções de UI
-        function triggerDirectUpload() {
-            document.getElementById('direct-file-input').click();
-        }
-
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
-        }
-
-        function toggleDesktopSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const btnText = document.getElementById('sidebar-btn-text');
-            window.appState.sidebarCollapsed = !window.appState.sidebarCollapsed;
-
-            if (window.appState.sidebarCollapsed) {
-                sidebar.classList.add('md:hidden');
-                btnText.innerText = "Expandir Menu";
-            } else {
-                sidebar.classList.remove('md:hidden');
-                btnText.innerText = "Recolher Menu";
-            }
-        }
-
-        function toggleRightPanel() {
-            const rightPanel = document.getElementById('right-panel');
-            const readerBtnText = document.getElementById('reader-btn-text');
-            window.appState.rightPanelOpen = !window.appState.rightPanelOpen;
-
-            if (window.appState.rightPanelOpen) {
-                rightPanel.classList.remove('hidden');
-                readerBtnText.innerText = "Ocultar Leitor";
-            } else {
-                rightPanel.classList.add('hidden');
-                readerBtnText.innerText = "Mostrar Leitor";
-            }
-        }
-
-        function switchSidebarTab(tabName) {
-            document.querySelectorAll('.sidebar-tab-content').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('[id^="tab-btn-"]').forEach(btn => {
-                btn.className = 'flex-1 py-2 text-center border-b-2 border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200';
-            });
-
-            document.getElementById(`sidebar-tab-${tabName}`).classList.remove('hidden');
-            const activeBtn = document.getElementById(`tab-btn-${tabName}`);
-            activeBtn.className = 'flex-1 py-2 text-center border-b-2 border-brand-500 text-brand-600 dark:text-brand-400 font-semibold';
-        }
-
-        function toggleTheme() {
-            document.documentElement.classList.toggle('dark');
-            showToast(document.documentElement.classList.contains('dark') ? 'Tema Escuro Ativado' : 'Tema Claro Ativado', 'fa-moon');
-        }
-
-        // Modais
-        function openTutorialModal() { document.getElementById('tutorial-modal').classList.remove('hidden'); }
-        function closeTutorialModal() { document.getElementById('tutorial-modal').classList.add('hidden'); }
-
-        function openSettingsModal() {
-            document.getElementById('api-key-input').value = window.appState.apiKey;
-            document.getElementById('settings-modal').classList.remove('hidden');
-        }
-        function closeSettingsModal() { document.getElementById('settings-modal').classList.add('hidden'); }
-        function saveApiKey() {
-            const key = document.getElementById('api-key-input').value.trim();
-            window.appState.apiKey = key;
-            localStorage.setItem('medsearch_api_key', key);
-            closeSettingsModal();
-            showToast('Chave de API salva!', 'fa-circle-check');
-        }
-
-        // Redimensionamento de Sidebar
-        window.addEventListener('DOMContentLoaded', () => {
-            setupSidebarResize();
-        });
-
-        function setupSidebarResize() {
-            const sidebar = document.getElementById('sidebar');
-            const resizer = document.getElementById('sidebar-resizer');
-            let isResizing = false;
-
-            resizer.addEventListener('mousedown', () => {
-                isResizing = true;
-                document.body.style.cursor = 'col-resize';
-                document.body.style.userSelect = 'none';
-            });
-
-            document.addEventListener('mousemove', (e) => {
-                if (!isResizing) return;
-                const newWidth = e.clientX;
-                if (newWidth >= 200 && newWidth <= 480) {
-                    sidebar.style.width = `${newWidth}px`;
-                }
-            });
-
-            document.addEventListener('mouseup', () => {
-                if (isResizing) {
-                    isResizing = false;
-                    document.body.style.cursor = '';
-                    document.body.style.userSelect = '';
-                }
-            });
-        }
-
-        // Gerenciamento de Chats
-        function getActiveChat() {
-            return window.appState.chats.find(c => c.id === window.appState.activeChatId) || window.appState.chats[0];
-        }
-
-        function createNewChat() {
-            const newId = 'chat_' + Date.now();
-            const newChat = {
-                id: newId,
-                title: 'Novo Tópico de Estudo',
-                createdAt: Date.now(),
-                files: [],
-                messages: [
-                    {
-                        role: 'assistant',
-                        text: 'Novo chat criado! Clique em "Upload de Arquivos" para anexar seus materiais.',
-                        sources: []
-                    }
-                ]
-            };
-            window.appState.chats.unshift(newChat);
-            window.appState.activeChatId = newId;
-            if (window.saveToDatabase) window.saveToDatabase();
-            renderChatsList();
-            renderActiveChat();
-            renderSidebarFilesList();
-            showToast('Novo chat criado', 'fa-circle-plus');
-        }
-
-        function switchChat(chatId) {
-            window.appState.activeChatId = chatId;
-            renderChatsList();
-            renderActiveChat();
-            renderSidebarFilesList();
-        }
-
-        function deleteChat(chatId, event) {
-            event.stopPropagation();
-            if (window.appState.chats.length <= 1) {
-                showToast('Mantenha pelo menos um chat.', 'fa-triangle-exclamation');
-                return;
-            }
-            if (confirm('Deseja excluir este chat?')) {
-                window.appState.chats = window.appState.chats.filter(c => c.id !== chatId);
-                if (window.appState.activeChatId === chatId) {
-                    window.appState.activeChatId = window.appState.chats[0].id;
-                }
-                if (window.saveToDatabase) window.saveToDatabase();
-                renderChatsList();
-                renderActiveChat();
-                renderSidebarFilesList();
-                showToast('Chat excluído', 'fa-trash');
-            }
-        }
-
-        function renderChatsList() {
-            const listEl = document.getElementById('chats-list');
-            listEl.innerHTML = window.appState.chats.map(chat => {
-                const isActive = chat.id === window.appState.activeChatId;
-                const activeClasses = isActive 
-                    ? 'bg-brand-50 dark:bg-brand-900/40 text-brand-700 dark:text-brand-300 border-brand-200 dark:border-brand-800 shadow-sm font-semibold' 
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/50 border-transparent';
-
-                return `
-                    <div onclick="switchChat('${chat.id}')" class="group flex items-center justify-between p-3 rounded-xl border cursor-pointer transition ${activeClasses}">
-                        <div class="flex items-center space-x-2.5 truncate">
-                            <i class="fa-solid fa-comments text-xs opacity-70"></i>
-                            <span class="text-xs truncate">${escapeHtml(chat.title)}</span>
-                        </div>
-                        <button onclick="deleteChat('${chat.id}', event)" class="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-red-500 p-1 text-xs transition">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function renderActiveChat() {
-            const chat = getActiveChat();
-            document.getElementById('current-chat-title').innerText = chat.title;
-
-            const messagesEl = document.getElementById('chat-messages');
-            messagesEl.innerHTML = chat.messages.map(msg => {
-                const isUser = msg.role === 'user';
-                const bgClass = isUser 
-                    ? 'bg-brand-600 text-white ml-auto rounded-2xl rounded-tr-sm' 
-                    : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 mr-auto rounded-2xl rounded-tl-sm border border-slate-200 dark:border-slate-700 shadow-sm';
-
-                let sourcesHtml = '';
-                if (msg.sources && msg.sources.length > 0) {
-                    sourcesHtml = `
-                        <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 text-xs space-y-1">
-                            <p class="font-semibold text-slate-500 dark:text-slate-400"><i class="fa-solid fa-bookmark text-brand-500"></i> Localizado nos Arquivos:</p>
-                            ${msg.sources.map(src => `
-                                <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-900/60 p-2 rounded-lg">
-                                    <span class="truncate font-medium text-slate-700 dark:text-slate-300">${escapeHtml(src.fileName)} ${src.page ? `(Pág. ${src.page})` : ''}</span>
-                                    <button onclick="openReaderSnippet('${src.fileId}', ${src.paragraphIndex})" class="text-brand-600 dark:text-brand-400 hover:underline font-medium text-[11px] ml-2">Abrir trecho</button>
-                                </div>
-                            `).join('')}
-                        </div>
-                    `;
-                }
-
-                let webSourcesHtml = '';
-                if (msg.webSources && msg.webSources.length > 0) {
-                    webSourcesHtml = `
-                        <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 text-xs space-y-1">
-                            <p class="font-semibold text-amber-600 dark:text-amber-400"><i class="fa-solid fa-globe"></i> Referências da Web / IA:</p>
-                            ${msg.webSources.map(ws => `
-                                <a href="${ws.uri}" target="_blank" class="block bg-amber-50 dark:bg-amber-950/30 p-2 rounded-lg text-amber-700 dark:text-amber-300 hover:underline truncate">
-                                    <i class="fa-solid fa-link text-[10px] mr-1"></i> ${escapeHtml(ws.title || ws.uri)}
-                                </a>
-                            `).join('')}
-                        </div>
-                    `;
-                }
-
-                return `
-                    <div class="max-w-2xl w-full flex flex-col ${isUser ? 'ml-auto items-end' : 'mr-auto items-start'}">
-                        <div class="p-4 ${bgClass} text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
-                            ${formatMarkdown(msg.text)}
-                            ${sourcesHtml}
-                            ${webSourcesHtml}
-                        </div>
-                    </div>
-                `;
-            }).join('');
-
-            messagesEl.scrollTop = messagesEl.scrollHeight;
-        }
-
-        function renderSidebarFilesList() {
-            const chat = getActiveChat();
-            const listEl = document.getElementById('sidebar-files-list');
-            if (!chat.files || chat.files.length === 0) {
-                listEl.innerHTML = `<p class="text-[11px] text-slate-400 text-center py-2">Nenhum arquivo neste chat.</p>`;
-                return;
-            }
-
-            listEl.innerHTML = chat.files.map(f => `
-                <div class="flex items-center justify-between p-2 bg-slate-50 dark:bg-slate-700/40 border border-slate-200 dark:border-slate-700 rounded-lg text-xs">
-                    <span class="truncate font-medium text-slate-700 dark:text-slate-300"><i class="fa-solid fa-file-lines text-brand-500 mr-1"></i>${escapeHtml(f.name)}</span>
-                    <button onclick="removeChatFile('${f.id}')" class="text-slate-400 hover:text-red-500 ml-2"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            `).join('');
-        }
-
-        function renderSidebarHistory() {
-            const listEl = document.getElementById('sidebar-history-list');
-            if (window.appState.searchHistory.length === 0) {
-                listEl.innerHTML = `<p class="text-[11px] text-slate-400 text-center py-2">Nenhuma busca recente.</p>`;
-                return;
-            }
-
-            listEl.innerHTML = window.appState.searchHistory.slice(0, 10).map(item => `
-                <div onclick="reapplySearch('${escapeHtml(item)}')" class="p-2 bg-slate-50 dark:bg-slate-700/30 hover:bg-brand-50 dark:hover:bg-brand-900/30 border border-slate-200 dark:border-slate-700/60 rounded-lg cursor-pointer truncate flex items-center justify-between">
-                    <span class="truncate text-slate-700 dark:text-slate-300"><i class="fa-solid fa-magnifying-glass text-slate-400 text-[10px] mr-1.5"></i>${escapeHtml(item)}</span>
-                    <i class="fa-solid fa-chevron-right text-[10px] text-slate-400"></i>
-                </div>
-            `).join('');
-        }
-
-        function reapplySearch(term) {
-            document.getElementById('user-input').value = term;
-        }
-
-        // Upload de Arquivos
-        async function handleFileUpload(e) {
-            const fileList = e.target.files;
-            if (!fileList || fileList.length === 0) return;
-
-            const chat = getActiveChat();
-
-            for (let file of fileList) {
-                const ext = file.name.split('.').pop().toLowerCase();
-                if (!['txt', 'md', 'pdf', 'docx'].includes(ext)) {
-                    showToast(`Formato .${ext} não suportado.`, 'fa-circle-xmark');
-                    continue;
-                }
-
-                showToast(`Processando ${file.name}...`, 'fa-spinner');
-
-                try {
-                    let paragraphs = [];
-                    let fullText = "";
-
-                    if (ext === 'txt' || ext === 'md') {
-                        fullText = await file.text();
-                        paragraphs = parseParagraphs(fullText);
-                    } else if (ext === 'docx') {
-                        const arrayBuffer = await file.arrayBuffer();
-                        const result = await mammoth.extractRawText({ arrayBuffer });
-                        fullText = result.value;
-                        paragraphs = parseParagraphs(fullText);
-                    } else if (ext === 'pdf') {
-                        const arrayBuffer = await file.arrayBuffer();
-                        const pdfRes = await parsePdf(arrayBuffer);
-                        paragraphs = pdfRes.paragraphs;
-                        fullText = pdfRes.fullText;
-                    }
-
-                    chat.files.push({
-                        id: 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-                        name: file.name,
-                        size: formatFileSize(file.size),
-                        type: ext.toUpperCase(),
-                        paragraphs,
-                        rawText: fullText
-                    });
-
-                    showToast(`${file.name} carregado com sucesso!`, 'fa-circle-check');
-                } catch (err) {
-                    console.error(err);
-                    showToast(`Erro ao ler ${file.name}`, 'fa-circle-xmark');
-                }
-            }
-
-            if (window.saveToDatabase) window.saveToDatabase();
-            renderActiveChat();
-            renderSidebarFilesList();
-        }
-
-        function parseParagraphs(text) {
-            const lines = text.split(/\r?\n\r?\n/);
-            let paragraphs = [];
-            let idx = 1;
-            lines.forEach(l => {
-                if (l.trim()) paragraphs.push({ paragraphIndex: idx++, page: null, text: l.trim() });
-            });
-            return paragraphs;
-        }
-
-        async function parsePdf(arrayBuffer) {
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            let paragraphs = [];
-            let fullTextArr = [];
-            let pIdx = 1;
-
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const content = await page.getTextContent();
-                const pageText = content.items.map(it => it.str).join(' ');
-                
-                paragraphs.push({
-                    paragraphIndex: pIdx++,
-                    page: i,
-                    text: pageText.trim()
-                });
-                fullTextArr.push(pageText);
-            }
-            return { paragraphs, fullText: fullTextArr.join('\n') };
-        }
-
-        function removeChatFile(fileId) {
-            const chat = getActiveChat();
-            chat.files = chat.files.filter(f => f.id !== fileId);
-            if (window.saveToDatabase) window.saveToDatabase();
-            renderActiveChat();
-            renderSidebarFilesList();
-            showToast('Arquivo removido', 'fa-trash');
-        }
-
-        // Pesquisa e Envio
-        async function handleSendMessage(e) {
-            e.preventDefault();
-            const input = document.getElementById('user-input');
-            const query = input.value.trim();
-            if (!query) return;
-
-            input.value = '';
-            const chat = getActiveChat();
-
-            if (!window.appState.searchHistory.includes(query)) {
-                window.appState.searchHistory.unshift(query);
-                renderSidebarHistory();
-            }
-
-            if (chat.messages.length <= 1 && chat.title === 'Semiologia e Estudo Médico') {
-                chat.title = query.length > 25 ? query.substring(0, 25) + '...' : query;
-            }
-
-            chat.messages.push({ role: 'user', text: query });
-            renderActiveChat();
-            renderChatsList();
-
-            const loadingIdx = chat.messages.push({ role: 'assistant', text: 'Vasculhando arquivos do livro e base...', sources: [] }) - 1;
-            renderActiveChat();
-
-            try {
-                const matches = searchInLocalFiles(chat.files, query);
-
-                if (matches.length > 0) {
-                    let responseText = `Encontrei **${matches.length} trecho(s)** para **"${query}"** nos arquivos:\n\n`;
-                    matches.slice(0, 3).forEach((m, i) => {
-                        responseText += `> **[${i+1}] ${m.fileName}** ${m.page ? `(Pág. ${m.page})` : ''}:\n> "${m.text.substring(0, 250)}..."\n\n`;
-                    });
-                    responseText += `Clique em "Abrir trecho" abaixo para ver o capítulo no leitor.`;
-
-                    chat.messages[loadingIdx] = {
-                        role: 'assistant',
-                        text: responseText,
-                        sources: matches.map(m => ({ fileId: m.fileId, fileName: m.fileName, page: m.page, paragraphIndex: m.paragraphIndex }))
-                    };
-
-                    openReaderSnippet(matches[0].fileId, matches[0].paragraphIndex);
-                } else {
-                    chat.messages[loadingIdx].text = `O termo **"${query}"** não foi localizado nos arquivos enviados. Realizando pesquisa complementar em fontes acadêmicas...`;
-                    renderActiveChat();
-
-                    const aiResult = await queryGeminiWithSearch(query, chat.files);
-                    chat.messages[loadingIdx] = {
-                        role: 'assistant',
-                        text: aiResult.text,
-                        sources: [],
-                        webSources: aiResult.sources
-                    };
-                }
-            } catch (err) {
-                console.error(err);
-                chat.messages[loadingIdx] = {
-                    role: 'assistant',
-                    text: 'Ocorreu um erro ao pesquisar. Verifique os arquivos ou configure sua chave de API nas opções.',
-                    sources: []
-                };
-            }
-
-            if (window.saveToDatabase) window.saveToDatabase();
-            renderActiveChat();
-        }
-
-        function searchInLocalFiles(files, query) {
-            const matches = [];
-            const cleanQuery = query.toLowerCase();
-
-            if (!files) return matches;
-
-            files.forEach(file => {
-                file.paragraphs.forEach(p => {
-                    if (p.text.toLowerCase().includes(cleanQuery)) {
-                        matches.push({
-                            fileId: file.id,
-                            fileName: file.name,
-                            page: p.page,
-                            paragraphIndex: p.paragraphIndex,
-                            text: p.text
-                        });
-                    }
-                });
-            });
-
-            return matches;
-        }
-
-        async function queryGeminiWithSearch(query, files) {
-            let contextPrompt = `O usuário está estudando o termo: "${query}".`;
-            if (files && files.length > 0) {
-                contextPrompt += ` Arquivos de referência do usuário: ${files.map(f => f.name).join(', ')}.`;
-            }
-            contextPrompt += ` Explique o termo de forma didática, detalhada e estruturada.`;
-
-            const payload = {
-                contents: [{ parts: [{ text: contextPrompt }] }],
-                tools: [{ "google_search": {} }],
-                systemInstruction: {
-                    parts: [{ text: "Você é um Tutor de Estudos e Pesquisa de alto nível. Responda em português com clareza e estrutura acadêmica." }]
-                }
-            };
-
-            const apiKey = window.appState.apiKey || "";
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-
-            const result = await response.json();
-            const candidate = result.candidates?.[0];
-
-            if (candidate && candidate.content?.parts?.[0]?.text) {
-                const text = candidate.content.parts[0].text;
-                let sources = [];
-                const groundingMetadata = candidate.groundingMetadata;
-                if (groundingMetadata && groundingMetadata.groundingAttributions) {
-                    sources = groundingMetadata.groundingAttributions
-                        .map(attr => ({ uri: attr.web?.uri, title: attr.web?.title }))
-                        .filter(s => s.uri && s.title);
-                }
-                return { text, sources };
-            } else {
-                throw new Error("Erro na chamada Gemini");
-            }
-        }
-
-        // Visualizador Leitor
-        function openReaderSnippet(fileId, paragraphIndex) {
-            const chat = getActiveChat();
-            const file = chat.files.find(f => f.id === fileId);
-            if (!file) return;
-
-            const readerTitle = document.getElementById('reader-title');
-            const readerBadge = document.getElementById('reader-badge');
-            const readerContainer = document.getElementById('reader-container');
-
-            readerTitle.innerText = file.name;
-            const targetPara = file.paragraphs.find(p => p.paragraphIndex === paragraphIndex);
-            readerBadge.innerText = targetPara && targetPara.page ? `Pág. ${targetPara.page}` : `Parágrafo ${paragraphIndex}`;
-            readerBadge.classList.remove('hidden');
-
-            readerContainer.innerHTML = file.paragraphs.map(p => {
-                const isTarget = p.paragraphIndex === paragraphIndex;
-                const targetAttr = isTarget ? 'id="active-target-paragraph"' : '';
-                const classes = isTarget 
-                    ? 'p-3 bg-amber-50 dark:bg-amber-900/30 border-l-4 border-amber-500 my-2 rounded-r-lg font-medium shadow-sm' 
-                    : 'my-2 opacity-80';
-                const pageLabel = p.page ? `<span class="text-[10px] text-slate-400 font-sans block mb-1">[Pág. ${p.page}]</span>` : '';
-                return `<div ${targetAttr} class="${classes}">${pageLabel}${escapeHtml(p.text)}</div>`;
-            }).join('');
-
-            setTimeout(() => {
-                const targetEl = document.getElementById('active-target-paragraph');
-                if (targetEl) {
-                    targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-            }, 100);
-        }
-
-        function closeReader() {
-            document.getElementById('reader-container').innerHTML = `
-                <div class="h-full flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 text-center p-6 font-sans">
-                    <i class="fa-solid fa-book-open-reader text-4xl mb-3 opacity-30"></i>
-                    <p class="text-sm font-medium">Nenhum documento aberto</p>
-                    <p class="text-xs mt-1">Pesquise um termo para abrir e destacar os trechos diretamente nesta aba.</p>
-                </div>
-            `;
-            document.getElementById('reader-title').innerText = "Visualizador de Documentos";
-            document.getElementById('reader-badge').classList.add('hidden');
-        }
-
-        // Backup Manual em JSON
-        function exportBackup() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(window.appState, null, 2));
-            const dlAnchor = document.createElement('a');
-            dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `medsearch_backup_${Date.now()}.json`);
-            document.body.appendChild(dlAnchor);
-            dlAnchor.click();
-            dlAnchor.remove();
-            showToast('Arquivo JSON de backup gerado!', 'fa-download');
-        }
-
-        function importBackup(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const parsed = JSON.parse(e.target.result);
-                    if (parsed.chats) {
-                        window.appState.chats = parsed.chats;
-                        window.appState.activeChatId = window.appState.chats[0].id;
-                        if (window.saveToDatabase) window.saveToDatabase();
-                        renderChatsList();
-                        renderActiveChat();
-                        renderSidebarFilesList();
-                        showToast('Backup restaurado com sucesso!', 'fa-circle-check');
-                    }
-                } catch (err) {
-                    showToast('Arquivo de backup inválido.', 'fa-circle-xmark');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        // Utilitários
-        function formatMarkdown(text) {
-            return escapeHtml(text)
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/\*(.*?)\*/g, '<em>$1</em>')
-                .replace(/&gt; (.*)/g, '<blockquote class="border-l-2 border-brand-500 pl-3 my-1 italic text-slate-600 dark:text-slate-300">$1</blockquote>');
-        }
-
-        function escapeHtml(str) {
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
-        }
-
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024, sizes = ['Bytes', 'KB', 'MB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-        }
-
-        function showToast(msg, icon = 'fa-circle-info') {
-            const toast = document.getElementById('toast');
-            document.getElementById('toast-msg').innerText = msg;
-            document.getElementById('toast-icon').className = `fa-solid ${icon} text-brand-400`;
-            toast.classList.remove('translate-y-20', 'opacity-0');
-            toast.classList.add('translate-y-0', 'opacity-100');
-            setTimeout(() => {
-                toast.classList.remove('translate-y-0', 'opacity-100');
-                toast.classList.add('translate-y-20', 'opacity-0');
-            }, 3000);
-        }
-    </script>
+    <div id="chat"><div class="inner" id="inner"></div></div>
+    <form id="form">
+      <div class="row">
+        <textarea id="q" rows="1" placeholder="Ex.: débito cardíaco, potencial de ação, dispneia…" aria-label="Termo ou conceito" disabled></textarea>
+        <button class="btn" id="enviar" type="submit" disabled>Buscar</button>
+      </div>
+    </form>
+  </main>
+
+  <section class="reader" aria-label="Leitor de documento">
+    <div class="rh" id="rh"></div>
+    <div class="rnav" id="rnav" hidden></div>
+    <div class="rbody" id="rbody"></div>
+  </section>
+</div>
+<div class="ovl" id="ovl"></div>
+
+<button class="novo" id="novo" type="button" aria-haspopup="dialog" aria-expanded="false">+ Nova conversa</button>
+<div class="pop" id="pop" role="dialog" aria-label="Nova conversa" hidden>
+  <h3>Nova conversa</h3>
+  <div><label for="nome">Nome do assunto</label>
+  <input id="nome" type="text" maxlength="60" placeholder="Ex.: Fisiologia médica" autocomplete="off"></div>
+  <div class="chips" id="sugn"></div>
+  <div class="acoes"><button class="btn sec2" id="cancelar" type="button">Cancelar</button><button class="btn" id="criar" type="button">Criar</button></div>
+</div>
+
+<input type="file" id="inp" multiple accept=".pdf,.docx,.txt,.md,.html,.htm" hidden>
+<input type="file" id="inpPasta" webkitdirectory multiple hidden>
+
+<div class="modal" id="mAjuda" hidden><div class="mbox" role="dialog" aria-label="Como usar">
+  <h3>Como usar</h3>
+  <p><b>1. Crie uma conversa</b> para cada assunto (Fisiologia, Semiologia…). Cada uma guarda os próprios arquivos e buscas.</p>
+  <p><b>2. Adicione arquivos</b> (PDF, DOCX, TXT, MD): solte aqui, escolha arquivos ou escolha uma pasta inteira, como a de Downloads.</p>
+  <p><b>3. Digite um termo.</b> Você recebe a ficha com a localização exata. Clique em <b>Abrir no leitor</b> para ver a página com o termo grifado.</p>
+  <p><b>4. Filtros:</b> pesquise em um arquivo só, ou só pela palavra exata.</p>
+  <button class="btn" data-fecha type="button">Entendi</button>
+</div></div>
+
+<div class="modal" id="mDados" hidden><div class="mbox" role="dialog" aria-label="Backup e IA">
+  <h3>Backup e IA</h3>
+  <p>Seus dados ficam salvos neste navegador. Baixe um backup de vez em quando.</p>
+  <div class="linha"><button class="mini" id="exp" type="button">Exportar backup</button><button class="mini" id="imp" type="button">Importar backup</button><input type="file" id="impf" accept=".json" hidden></div>
+  <div class="nota" id="bkmsg"></div>
+  <hr style="border:0;border-top:1px solid var(--line);width:100%">
+  <p><b>Explicação por IA (opcional).</b></p>
+  <p class="nota">Cole uma chave da API da Anthropic para a ficha ter definição, trechos e dica montados pelo Claude. Os trechos achados são enviados à Anthropic. A chave fica só neste navegador. Use uma chave com limite de gasto.</p>
+  <input type="password" id="chave" placeholder="sk-ant-…" autocomplete="off" aria-label="Chave da API">
+  <div class="linha"><button class="mini" id="salvaChave" type="button">Salvar chave</button><button class="mini" id="tiraChave" type="button">Remover</button></div>
+  <button class="btn sec2" data-fecha type="button">Fechar</button>
+</div></div>
+
+<script>
+(function(){
+"use strict";
+var MODELO="claude-sonnet-5-5";      /* modelo usado se você colar uma chave da API */
+var NOME_BANCO="pesquisa-termos";
+
+var $=function(i){return document.getElementById(i)};
+function h(tag,cls,txt){var e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+function norm(s){return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()}
+function escRe(s){return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}
+function tick(){return new Promise(function(r){setTimeout(r,30)})}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,8)}
+var STOP=["que","para","com","uma","dos","das","como","sobre","qual","quais","defina","explique","fale","onde","tem","por","nos","nas","um","de","da","do","em","no","na","os","as","ao","e","o","a"];
+
+var DB=null,MEM={convs:{},files:{},msgs:{}},modoMemoria=false;
+var convs=[],activeId=null,loadedId=null,files=[],msgs=[],cache={},prog=[],pending=null,notice=null,busy=false,renaming=null,confirmKey=null,sbTab="conv";
+var reader={fileId:null,center:1,alvo:0,termo:"",exato:false};
+
+if(window.pdfjsLib){pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"}
+
+/* ===== Armazenamento local (IndexedDB) ===== */
+function abrir(){return new Promise(function(res,rej){
+  if(!window.indexedDB){rej(new Error("sem IndexedDB"));return}
+  var r=indexedDB.open(NOME_BANCO,1);
+  r.onupgradeneeded=function(){var d=r.result;
+    d.createObjectStore("convs",{keyPath:"id"});
+    d.createObjectStore("files",{keyPath:"id"}).createIndex("conv","convId");
+    d.createObjectStore("msgs",{keyPath:"id"}).createIndex("conv","convId");};
+  r.onsuccess=function(){res(r.result)};r.onerror=function(){rej(r.error)};r.onblocked=function(){rej(new Error("bloqueado"))};
+})}
+function tx(store,mode,fn){return new Promise(function(res,rej){
+  var t=DB.transaction(store,mode),out=fn(t.objectStore(store));
+  t.oncomplete=function(){res(out&&"result" in out?out.result:undefined)};
+  t.onerror=t.onabort=function(){rej(t.error||new Error("falha ao gravar"))};
+})}
+function memList(s){return Object.keys(MEM[s]).map(function(k){return MEM[s][k]})}
+function todos(s){return DB?tx(s,"readonly",function(o){return o.getAll()}):Promise.resolve(memList(s))}
+function daConversa(s,cid){return DB?tx(s,"readonly",function(o){return o.index("conv").getAll(cid)}):Promise.resolve(memList(s).filter(function(x){return x.convId===cid}))}
+function gravar(s,o){if(!DB){MEM[s][o.id]=o;return Promise.resolve()}return tx(s,"readwrite",function(x){return x.put(o)})}
+function apagar(s,id){if(!DB){delete MEM[s][id];return Promise.resolve()}return tx(s,"readwrite",function(x){return x.delete(id)})}
+
+async function init(){
+  try{DB=await abrir()}catch(e){DB=null;modoMemoria=true}
+  var ult=null;try{ult=localStorage.getItem("pt_ativa")}catch(e){}
+  await carregarConvs();setBadge();
+  if(ult&&convs.some(function(c){return c.id===ult}))await switchTo(ult);
+  else if(convs.length)await switchTo(convs[0].id);
+  else renderAll();
+}
+async function carregarConvs(){convs=(await todos("convs")).sort(function(a,b){return a.criado-b.criado})}
+function temChave(){try{return localStorage.getItem("pt_chave")||""}catch(e){return""}}
+function setBadge(){
+  var b=$("badge");b.textContent="";
+  var a=h("div");a.appendChild(h("b",null,modoMemoria?"Sem armazenamento. ":"Salvo neste navegador. "));
+  a.appendChild(document.createTextNode(modoMemoria?"Tudo some ao fechar a página.":"Faça backup de vez em quando."));b.appendChild(a);
+  var c=h("div");c.appendChild(h("b",null,temChave()?"IA ligada. ":"Só busca local. "));
+  c.appendChild(document.createTextNode(temChave()?"Os trechos achados vão à Anthropic.":"Sem explicação por IA."));b.appendChild(c);
+}
+
+/* ===== Conversas ===== */
+async function switchTo(id){
+  loadedId=id;files=[];msgs=[];pending=null;notice=null;prog=[];renaming=null;confirmKey=null;
+  reader={fileId:null,center:1,alvo:0,termo:"",exato:false};
+  try{if(id)localStorage.setItem("pt_ativa",id)}catch(e){}
+  if(id){
+    try{
+      files=(await daConversa("files",id)).sort(function(a,b){return a.criado-b.criado});
+      files.forEach(function(f){if(f.pages){cache[f.id]={state:"ok",pages:f.pages.map(mk)};delete f.pages}});
+      msgs=(await daConversa("msgs",id)).sort(function(a,b){return a.criado-b.criado});
+    }catch(e){notice="Não consegui ler os dados salvos."}
+  }
+  activeId=id;renderAll();
+}
+function renderConvs(box){
+  var ul=h("ul","lst");
+  if(!convs.length)ul.appendChild(h("li","nota","Nenhuma conversa ainda. Use o botão no canto inferior esquerdo."));
+  convs.forEach(function(c){
+    var li=h("li","conv"+(c.id===activeId?" ativa":""));
+    if(renaming===c.id){
+      var inp=h("input");inp.type="text";inp.maxLength=60;inp.value=c.nome||"";inp.setAttribute("aria-label","Novo nome");
+      inp.addEventListener("keydown",function(e){
+        if(e.key==="Enter"){var v=inp.value.trim();renaming=null;if(v&&v!==c.nome){c.nome=v;gravar("convs",c).then(renderAll)}else renderSb()}
+        if(e.key==="Escape"){renaming=null;renderSb()}});
+      inp.addEventListener("blur",function(){if(renaming===c.id){renaming=null;renderSb()}});
+      li.appendChild(inp);ul.appendChild(li);setTimeout(function(){inp.focus();inp.select()},0);return;
+    }
+    var b=h("button","nm",c.nome||"Sem nome");b.type="button";
+    b.addEventListener("click",function(){if(c.id!==activeId)switchTo(c.id);fechaDrawer()});li.appendChild(b);
+    var e1=h("button","ib","✎");e1.type="button";e1.title="Renomear";e1.setAttribute("aria-label","Renomear "+c.nome);
+    e1.addEventListener("click",function(){renaming=c.id;renderSb()});li.appendChild(e1);
+    var e2=h("button","ib perigo","×");e2.type="button";e2.title="Apagar conversa";e2.setAttribute("aria-label","Apagar "+c.nome);
+    e2.addEventListener("click",function(){
+      if(confirmKey==="c"+c.id){confirmKey=null;removeConv(c)}
+      else{confirmKey="c"+c.id;renderSb();setTimeout(function(){if(confirmKey==="c"+c.id){confirmKey=null;renderSb()}},4000)}});
+    if(confirmKey==="c"+c.id){e2.textContent="Apagar tudo?";e2.className="ib conf"}
+    li.appendChild(e2);ul.appendChild(li);
+  });
+  box.appendChild(h("h2",null,"Suas conversas"));box.appendChild(ul);
+}
+async function removeConv(c){
+  try{
+    var fs=await daConversa("files",c.id);for(var i=0;i<fs.length;i++){await apagar("files",fs[i].id);delete cache[fs[i].id]}
+    var ms=await daConversa("msgs",c.id);for(var j=0;j<ms.length;j++)await apagar("msgs",ms[j].id);
+    await apagar("convs",c.id);
+  }catch(e){notice="Não consegui apagar tudo."}
+  await carregarConvs();
+  if(activeId===c.id)await switchTo(convs.length?convs[0].id:null);else renderAll();
+}
+var pop=$("pop"),nb=$("novo");
+function togglePop(open){var o=open==null?pop.hidden:open;pop.hidden=!o;nb.setAttribute("aria-expanded",String(o));if(o){$("nome").value="";setTimeout(function(){$("nome").focus()},0)}}
+nb.addEventListener("click",function(){togglePop()});
+$("cancelar").addEventListener("click",function(){togglePop(false)});
+$("nome").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();criar()}if(e.key==="Escape")togglePop(false)});
+$("criar").addEventListener("click",criar);
+["Fisiologia médica","Semiologia","Anatomia","Farmacologia"].forEach(function(t){
+  var b=h("button","chip",t);b.type="button";b.addEventListener("click",function(){$("nome").value=t;$("nome").focus()});$("sugn").appendChild(b)});
+async function criar(){
+  var nome=$("nome").value.trim()||("Conversa "+(convs.length+1));togglePop(false);
+  var c={id:uid(),nome:nome,criado:Date.now()};
+  try{await gravar("convs",c)}catch(e){notice="Não consegui criar a conversa.";renderMain();return}
+  await carregarConvs();await switchTo(c.id);
+}
+
+/* ===== Arquivos: soltar, escolher arquivos, escolher pasta ===== */
+var inp=$("inp"),inpPasta=$("inpPasta"),OK_EXT=/\.(pdf|docx|txt|md|html?)$/i;
+function soSuportados(l){return Array.prototype.slice.call(l).filter(function(f){return OK_EXT.test(f.name)})}
+function lerEntrada(en,out){return new Promise(function(res){
+  if(en.isFile){en.file(function(f){if(OK_EXT.test(f.name))out.push(f);res()},function(){res()})}
+  else if(en.isDirectory){var rd=en.createReader(),all=[];
+    (function ler(){rd.readEntries(async function(es){
+      if(!es.length){for(var i=0;i<all.length;i++)await lerEntrada(all[i],out);res()}
+      else{all=all.concat(Array.prototype.slice.call(es));ler()}},function(){res()})})()}
+  else res()})}
+async function lerPasta(dir,out){
+  for await(var par of dir.entries()){
+    if(par[1].kind==="file"){if(OK_EXT.test(par[0]))out.push(await par[1].getFile())}
+    else await lerPasta(par[1],out);
+  }
+}
+async function escolherArquivos(){
+  if(window.showOpenFilePicker){
+    try{
+      var hs=await showOpenFilePicker({multiple:true,startIn:"downloads",types:[{description:"Documentos",accept:{"application/pdf":[".pdf"],"application/vnd.openxmlformats-officedocument.wordprocessingml.document":[".docx"],"text/plain":[".txt",".md"],"text/html":[".html",".htm"]}}]});
+      addFiles(await Promise.all(hs.map(function(x){return x.getFile()})));return;
+    }catch(e){if(e&&e.name==="AbortError")return}
+  }
+  inp.click();
+}
+async function escolherPasta(){
+  if(window.showDirectoryPicker){
+    try{var dir=await showDirectoryPicker({startIn:"downloads"}),out=[];await lerPasta(dir,out);addFiles(out);return}
+    catch(e){if(e&&e.name==="AbortError")return}
+  }
+  inpPasta.click();
+}
+inp.addEventListener("change",function(){addFiles(soSuportados(inp.files));inp.value=""});
+inpPasta.addEventListener("change",function(){addFiles(soSuportados(inpPasta.files));inpPasta.value=""});
+$("bAdd").addEventListener("click",escolherArquivos);
+async function soltou(e){
+  e.preventDefault();var its=e.dataTransfer.items,out=[];
+  if(its&&its.length&&its[0].webkitGetAsEntry){
+    var ents=[];for(var i=0;i<its.length;i++){var en=its[i].webkitGetAsEntry();if(en)ents.push(en)}
+    for(var j=0;j<ents.length;j++)await lerEntrada(ents[j],out);addFiles(out);
+  }else addFiles(soSuportados(e.dataTransfer.files));
+}
+window.addEventListener("dragover",function(e){e.preventDefault()});
+window.addEventListener("drop",function(e){e.preventDefault()});
+
+function mk(t,i){return{n:i+1,text:t,nt:norm(t)}}
+function readBuf(f){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result)};r.onerror=function(){rej(r.error)};r.readAsArrayBuffer(f)})}
+function readTxt(f){return new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result)};r.onerror=function(){rej(r.error)};r.readAsText(f)})}
+async function extractPdf(buf,onp){
+  if(!window.pdfjsLib)throw new Error("o leitor de PDF não carregou (sem internet?)");
+  var doc=await pdfjsLib.getDocument({data:buf}).promise,out=[];
+  for(var p=1;p<=doc.numPages;p++){
+    var pg=await doc.getPage(p),tc=await pg.getTextContent();
+    out.push(tc.items.map(function(it){return it.str}).join(" ").replace(/\s+/g," ").normalize("NFC"));
+    if(onp&&p%10===0)onp(p,doc.numPages);
+  }
+  return out;
+}
+function fatiar(raw){return(raw.normalize("NFC").match(/[\s\S]{1,3000}/g)||[]).map(function(t){return t.replace(/\s+/g," ")})}
+async function addFiles(list){
+  if(!loadedId){notice="Crie uma conversa antes de adicionar arquivos.";renderMain();return}
+  var cid=loadedId,arr=Array.prototype.slice.call(list);
+  if(!arr.length){notice="Não encontrei PDF, DOCX, TXT ou MD para adicionar.";renderMain();return}
+  sbTab="arq";renderSb();
+  for(var k=0;k<arr.length;k++){
+    var file=arr[k],p={name:file.name,status:"Lendo…",warn:false};prog.push(p);renderSb();
+    try{
+      var low=file.name.toLowerCase(),tipo=low.endsWith(".pdf")?"pdf":low.endsWith(".docx")?"docx":"texto",texts,warn=false;
+      if(tipo==="pdf"){
+        texts=await extractPdf(await readBuf(file),function(a,b){p.status="Lendo… "+a+"/"+b;renderSb()});
+        warn=texts.reduce(function(a,b){return a+b.length},0)<40*texts.length;
+      }else if(tipo==="docx"){
+        if(!window.mammoth)throw new Error("o leitor de Word não carregou (sem internet?)");
+        texts=fatiar((await mammoth.extractRawText({arrayBuffer:await readBuf(file)})).value);
+      }else texts=fatiar((await readTxt(file)).replace(/<[^>]+>/g," "));
+      p.status="Salvando…";renderSb();
+      var f={id:uid(),convId:cid,nome:file.name,tipo:tipo,paginas:texts.length,aviso:warn,criado:Date.now(),pages:texts};
+      await gravar("files",f);
+      if(loadedId===cid){cache[f.id]={state:"ok",pages:texts.map(mk)};delete f.pages;files.push(f)}
+      prog.splice(prog.indexOf(p),1);
+    }catch(err){
+      p.status="Falhou: "+((err&&err.message)||"erro");p.warn=true;
+      (function(pp){setTimeout(function(){var i=prog.indexOf(pp);if(i>-1){prog.splice(i,1);renderSb()}},9000)})(p);
+    }
+    renderAll();
+  }
+}
+async function removeFile(f){
+  try{await apagar("files",f.id)}catch(e){notice="Não consegui apagar o arquivo."}
+  files=files.filter(function(x){return x.id!==f.id});delete cache[f.id];
+  if(reader.fileId===f.id)reader={fileId:null,center:1,alvo:0,termo:"",exato:false};
+  renderAll();
+}
+function unidade(f){return f.tipo==="pdf"?"Página":"Trecho"}
+function renderArquivos(box){
+  var dz=h("div","drop"+(loadedId?"":" off"));
+  dz.appendChild(h("strong",null,"Solte arquivos ou pastas aqui"));dz.appendChild(h("span",null,"PDF, DOCX, TXT ou MD"));
+  var ln=h("div","linha cen"),b1=h("button","mini","Escolher arquivos"),b2=h("button","mini","Escolher pasta");
+  b1.type=b2.type="button";b1.addEventListener("click",escolherArquivos);b2.addEventListener("click",escolherPasta);ln.appendChild(b1);ln.appendChild(b2);dz.appendChild(ln);
+  ["dragenter","dragover"].forEach(function(ev){dz.addEventListener(ev,function(e){e.preventDefault();dz.classList.add("over")})});
+  ["dragleave","drop"].forEach(function(ev){dz.addEventListener(ev,function(){dz.classList.remove("over")})});
+  dz.addEventListener("drop",soltou);
+  box.appendChild(dz);box.appendChild(h("h2",null,"Arquivos desta conversa"));
+  var ul=h("ul","lst files");
+  if(loadedId&&!files.length&&!prog.length)ul.appendChild(h("li","nota","Nenhum arquivo nesta conversa ainda."));
+  files.forEach(function(f){
+    var li=h("li"),nm=h("button","fn",f.nome);nm.type="button";nm.title="Abrir no leitor";nm.addEventListener("click",function(){openReader(f.id,1,"",false)});li.appendChild(nm);
+    var st=f.paginas+(f.tipo==="pdf"?" páginas":" trechos")+" · salvo",warn=false;
+    if(f.aviso){st+=" · quase sem texto (PDF escaneado?)";warn=true}
+    li.appendChild(h("span","mt"+(warn?" warn":""),st));
+    var x=h("button","ib perigo","×");x.type="button";x.title="Apagar arquivo";x.setAttribute("aria-label","Apagar "+f.nome);
+    if(confirmKey==="f"+f.id){x.textContent="Apagar?";x.className="ib conf"}
+    x.addEventListener("click",function(){
+      if(confirmKey==="f"+f.id){confirmKey=null;removeFile(f)}
+      else{confirmKey="f"+f.id;renderSb();setTimeout(function(){if(confirmKey==="f"+f.id){confirmKey=null;renderSb()}},4000)}});
+    li.appendChild(x);ul.appendChild(li);
+  });
+  prog.forEach(function(p){var li=h("li");li.appendChild(h("span","fn",p.name));li.appendChild(h("span","mt"+(p.warn?" warn":""),p.status));ul.appendChild(li)});
+  box.appendChild(ul);
+}
+function renderBuscas(box){
+  box.appendChild(h("h2",null,"Termos pesquisados nesta conversa"));
+  var vistos={},lista=[];msgs.slice().reverse().forEach(function(m){var k=norm(m.q);if(!vistos[k]){vistos[k]=1;lista.push(m.q)}});
+  if(!lista.length){box.appendChild(h("div","nota","Nenhuma busca ainda."));return}
+  lista.slice(0,30).forEach(function(t){var b=h("button","hist","🔎 "+t);b.type="button";b.addEventListener("click",function(){fechaDrawer();ask(t)});box.appendChild(b)});
+}
+function renderSb(){
+  $("nArq").textContent=files.length;
+  [["conv","stConv"],["arq","stArq"],["busca","stBusca"]].forEach(function(p){$(p[1]).classList.toggle("on",sbTab===p[0])});
+  var box=$("sbody");box.textContent="";
+  if(sbTab==="conv")renderConvs(box);else if(sbTab==="arq")renderArquivos(box);else renderBuscas(box);
+}
+$("stConv").addEventListener("click",function(){sbTab="conv";renderSb()});
+$("stArq").addEventListener("click",function(){sbTab="arq";renderSb()});
+$("stBusca").addEventListener("click",function(){sbTab="busca";renderSb()});
+
+/* ===== Backup e IA ===== */
+$("exp").addEventListener("click",async function(){
+  try{
+    var d={versao:1,convs:await todos("convs"),files:await todos("files"),msgs:await todos("msgs")};
+    var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(d)],{type:"application/json"}));
+    a.download="medsearch-backup-"+new Date().toISOString().slice(0,10)+".json";document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(a.href)},2000);$("bkmsg").textContent="Backup baixado.";
+  }catch(e){$("bkmsg").textContent="Não consegui gerar o backup."}
+});
+$("imp").addEventListener("click",function(){$("impf").click()});
+$("impf").addEventListener("change",async function(){
+  var f=this.files[0];this.value="";if(!f)return;
+  try{
+    var d=JSON.parse(await readTxt(f)),n=["convs","files","msgs"];
+    for(var i=0;i<n.length;i++){var l=d[n[i]]||[];for(var j=0;j<l.length;j++)await gravar(n[i],l[j])}
+    $("bkmsg").textContent="Backup importado.";await carregarConvs();
+    await switchTo(loadedId&&convs.some(function(c){return c.id===loadedId})?loadedId:(convs[0]&&convs[0].id)||null);
+  }catch(e){$("bkmsg").textContent="Arquivo de backup inválido."}
+});
+$("salvaChave").addEventListener("click",function(){var v=$("chave").value.trim();if(!v)return;try{localStorage.setItem("pt_chave",v)}catch(e){}$("chave").value="";setBadge();$("bkmsg").textContent="Chave salva neste navegador."});
+$("tiraChave").addEventListener("click",function(){try{localStorage.removeItem("pt_chave")}catch(e){}$("chave").value="";setBadge();$("bkmsg").textContent="Chave removida."});
+async function chamarIA(prompt){
+  var r=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
+    headers:{"content-type":"application/json","x-api-key":temChave(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+    body:JSON.stringify({model:MODELO,max_tokens:2000,messages:[{role:"user",content:prompt}]})});
+  if(!r.ok){var e=new Error("HTTP "+r.status);e.code=r.status;throw e}
+  var j=await r.json(),t=(j.content||[]).map(function(b){return b.text||""}).join("");
+  return JSON.parse(t.replace(/```json|```/g,"").trim());
+}
+
+/* ===== Busca ===== */
+function tokens(q){var t=norm(q).split(/[^a-z0-9]+/).filter(function(w){return w.length>2&&STOP.indexOf(w)<0});return t.length?t:[norm(q).trim()]}
+function stem(w){return w.length>6?w.slice(0,w.length-2):w}
+function regs(q,exato){return tokens(q).filter(Boolean).map(function(t){return new RegExp(exato?"\\b"+escRe(t)+"\\b":escRe(stem(t)),"g")})}
+function search(q,fileId,exato){
+  var rs=regs(q,exato),full=norm(q).trim(),hits=[];
+  files.forEach(function(f){
+    if(fileId&&fileId!=="ALL"&&f.id!==fileId)return;
+    var c=cache[f.id];if(!c||c.state!=="ok")return;
+    c.pages.forEach(function(p){
+      var sc=0,dist=0,first=-1;
+      rs.forEach(function(re){var n=(p.nt.match(re)||[]).length;if(n){dist++;sc+=Math.min(n,10);var ix=p.nt.search(re);if(first<0||ix<first)first=ix}});
+      if(!dist)return;sc=sc*dist;if(full.length>3&&p.nt.indexOf(full)>-1)sc+=15;
+      hits.push({file:f.nome,fileId:f.id,tipo:f.tipo,n:p.n,score:sc,text:p.text,first:first});
+    })});
+  hits.sort(function(a,b){return b.score-a.score});return hits.slice(0,6);
+}
+function excerpt(x){var s=Math.max(0,x.first-500);return x.text.slice(s,s+1900)}
+function strip(hits){return hits.map(function(x){var s=Math.max(0,x.first-120);return{file:x.file,fileId:x.fileId,tipo:x.tipo,n:x.n,score:x.score,snip:x.text.slice(s,s+420)}})}
+function buildPrompt(q,hits){
+  var ex=hits.map(function(x,i){return"[TRECHO "+(i+1)+" | arquivo: "+x.file+" | "+(x.tipo==="pdf"?"página do PDF":"trecho nº")+": "+x.n+"]\n"+excerpt(x)}).join("\n\n");
+  return"Você é um assistente de estudos para um estudante de medicina. Responda em português do Brasil.\n"+
+  "O estudante pesquisou o termo: \""+q+"\".\n"+
+  "Abaixo estão trechos extraídos dos arquivos dele. Use SOMENTE estes trechos para 'definicao' e 'trechos'. Se citacao, copie palavra por palavra de um trecho abaixo (máx. 40 palavras). Se parafrase, seja fiel. Nunca invente página: use a página do trecho de onde veio a informação.\n"+
+  "Se os trechos não tratarem do termo, retorne encontrado=false e sugira em 'alternativos' termos que aparecem nos trechos.\n"+
+  "'dica' é conhecimento seu, fora do material: 2 a 4 itens curtos (pergunta-chave, sinal de alerta, conexão clínica), só se fizer sentido.\n"+
+  "Responda APENAS com JSON, sem markdown, neste formato:\n"+
+  "{\"encontrado\":true,\"tema\":\"tema geral do material\",\"definicao\":\"resumo direto e acadêmico\",\"trechos\":[{\"tipo\":\"citacao\",\"texto\":\"...\",\"arquivo\":\"nome\",\"pagina\":0}],\"dica\":[\"...\"],\"alternativos\":[\"...\"]}\n\n"+ex;
+}
+async function ask(q){
+  q=(q||"").trim();if(!q||busy||!loadedId)return;notice=null;
+  if(!files.length){notice="Esta conversa ainda não tem arquivos. Use “Adicionar arquivos”, no topo.";showView("chat");renderMain();return}
+  showView("chat");
+  var cid=loadedId,exato=$("fExato").checked,ext=$("fExt").checked,fid=$("fDoc").value;
+  busy=true;$("enviar").disabled=true;
+  pending={q:q,text:"Procurando nos arquivos…"};renderMain();await tick();
+  var hits=search(q,fid,exato),resp,ia=!!temChave();
+  if(!hits.length)resp={tipo:"nada",exato:exato,externo:ext,texto:"Não encontrei “"+q+"” nos arquivos pesquisados.",alternativos:[],hits:[]};
+  else if(!ia)resp={tipo:"local",exato:exato,hits:strip(hits),motivo:null};
+  else{
+    pending.text="Montando a ficha…";renderMain();
+    try{
+      var d=await chamarIA(buildPrompt(q,hits));
+      resp=(d&&d.encontrado===false)?{tipo:"nada",exato:exato,externo:ext,texto:"Achei páginas com palavras parecidas, mas elas não tratam bem de “"+q+"”.",alternativos:d.alternativos||[],hits:strip(hits)}:{tipo:"ficha",exato:exato,data:d||{},hits:strip(hits)};
+    }catch(err){
+      var m=(err&&(err.code===401||err.code===403))?"A chave da API foi recusada. Confira a chave. Mostro só o que achei nos arquivos.":"A IA não respondeu agora (pode ser bloqueio do site ou da rede). Mostro só o que achei nos arquivos.";
+      resp={tipo:"local",exato:exato,hits:strip(hits),motivo:m};
+    }
+  }
+  var msg={id:uid(),convId:cid,q:q,resp:JSON.parse(JSON.stringify(resp)),criado:Date.now()};
+  try{await gravar("msgs",msg)}catch(e){if(loadedId===cid)notice="Não consegui salvar esta busca."}
+  if(loadedId===cid)msgs.push(msg);
+  pending=null;busy=false;renderAll();
+}
+
+/* ===== Marcar termo (sem HTML inseguro) ===== */
+function marcar(el,text,q,exato){
+  var nt=norm(text),parts=tokens(q).filter(Boolean).map(function(t){return escRe(exato?t:stem(t))});
+  if(!parts.length){el.textContent=text;return}
+  var re=new RegExp(exato?"\\b(?:"+parts.join("|")+")\\b":"(?:"+parts.join("|")+")","g"),last=0,m;
+  while((m=re.exec(nt))){
+    if(!m[0].length){re.lastIndex++;continue}
+    if(m.index>last)el.appendChild(document.createTextNode(text.slice(last,m.index)));
+    el.appendChild(h("mark",null,text.slice(m.index,m.index+m[0].length)));last=m.index+m[0].length;
+  }
+  if(last<text.length)el.appendChild(document.createTextNode(text.slice(last)));
+}
+
+/* ===== Leitor ===== */
+function achaArquivo(fileId,nome){
+  for(var i=0;i<files.length;i++)if(files[i].id===fileId)return files[i];
+  for(var j=0;j<files.length;j++)if(files[j].nome===nome)return files[j];
+  return null;
+}
+function openReader(fileId,pagina,termo,exato,nome){
+  var f=achaArquivo(fileId,nome);
+  if(!f){notice="Esse arquivo não está mais nesta conversa.";renderMain();return}
+  reader={fileId:f.id,center:pagina||1,alvo:termo?pagina:0,termo:termo||"",exato:!!exato};
+  renderReader();showView("leitor");
+}
+function renderReader(){
+  var rh=$("rh"),nav=$("rnav"),body=$("rbody");rh.textContent="";body.textContent="";nav.textContent="";
+  var f=reader.fileId?achaArquivo(reader.fileId):null,c=f&&cache[f.id];
+  if(!f||!c||c.state!=="ok"){
+    rh.appendChild(h("strong",null,"Leitor de documento"));rh.appendChild(h("div","nota","Nenhum arquivo aberto"));nav.hidden=true;
+    body.appendChild(h("div","vz","Clique em um arquivo da lista ou em “Abrir no leitor” em um resultado para ler o trecho aqui."));return;
+  }
+  var total=c.pages.length,u=unidade(f),ini=Math.max(1,reader.center-4),fim=Math.min(total,reader.center+4);
+  rh.appendChild(h("strong",null,f.nome));rh.appendChild(h("div","nota",u+"s "+ini+" a "+fim+" de "+total+(reader.termo?" · termo grifado: “"+reader.termo+"”":"")));
+  nav.hidden=false;
+  var ant=h("button","mini","‹ Anteriores"),prox=h("button","mini","Próximas ›"),ir=h("input");
+  ant.type=prox.type="button";ir.type="number";ir.min=1;ir.max=total;ir.placeholder=u.slice(0,3)+".";ir.setAttribute("aria-label","Ir para "+u.toLowerCase());
+  ant.disabled=ini<=1;prox.disabled=fim>=total;
+  ant.addEventListener("click",function(){reader.center=Math.max(1,ini-5);renderReader()});
+  prox.addEventListener("click",function(){reader.center=Math.min(total,fim+5);renderReader()});
+  ir.addEventListener("keydown",function(e){if(e.key==="Enter"){var n=Math.max(1,Math.min(total,parseInt(ir.value,10)||1));reader.center=n;reader.alvo=n;renderReader()}});
+  nav.appendChild(ant);nav.appendChild(ir);nav.appendChild(prox);
+  var alvoEl=null;
+  for(var n=ini;n<=fim;n++){
+    var pg=c.pages[n-1],box=h("div","pgbox"+(n===reader.alvo?" alvo":""));
+    box.appendChild(h("span","ph",u+" "+n+(f.tipo==="pdf"?" (do PDF)":"")));
+    var tx=h("div");if(reader.termo)marcar(tx,pg.text,reader.termo,reader.exato);else tx.textContent=pg.text||"(sem texto nesta página)";
+    box.appendChild(tx);body.appendChild(box);if(n===reader.alvo)alvoEl=box;
+  }
+  setTimeout(function(){if(alvoEl)alvoEl.scrollIntoView({block:"center"});else body.scrollTop=0},50);
+}
+
+/* ===== Telas do chat ===== */
+function secao(cls,ico,titulo){var s=h("section","sec "+cls),hd=h("h3");hd.appendChild(h("span",null,ico));hd.appendChild(h("span",null,titulo));s.appendChild(hd);var b=h("div","b");s.appendChild(b);return{el:s,body:b}}
+function onde(x){return(x.tipo==="pdf"||!x.tipo?"p. ":"trecho ")+x.n}
+function tabela(hits,q,exato){
+  var w=h("div","roll"),t=h("table"),hd=h("tr");
+  ["Arquivo","Local","Relevância",""].forEach(function(x){hd.appendChild(h("th",null,x))});
+  var th=h("thead");th.appendChild(hd);t.appendChild(th);var tb=h("tbody");
+  hits.forEach(function(x,i){
+    var r=h("tr");r.appendChild(h("td",null,String(x.file)));r.appendChild(h("td","pg",onde(x)));r.appendChild(h("td",null,i===0?"mais forte":i<3?"alta":"média"));
+    var td=h("td"),b=h("button","abrir","Abrir no leitor");b.type="button";b.addEventListener("click",function(){openReader(x.fileId,x.n,q,exato,x.file)});td.appendChild(b);r.appendChild(td);tb.appendChild(r)});
+  t.appendChild(tb);w.appendChild(t);return w;
+}
+function chipsAlt(list){var c=h("div","chips");list.forEach(function(t){var b=h("button","chip",String(t));b.type="button";b.addEventListener("click",function(){ask(String(t))});c.appendChild(b)});return c}
+function locSec(hits,q,exato){var s=secao("s3","📍","Localização no arquivo");s.body.appendChild(tabela(hits,q,exato));
+  s.body.appendChild(h("p","nota","A página é a do PDF (contada desde a capa). A página impressa no livro pode ser diferente."));return s.el}
+function renderFicha(root,q,r){
+  var data=r.data||{},hits=r.hits||[],c=h("div","resp");c.appendChild(h("h2","termo",q));
+  if(data.tema)c.appendChild(h("div","tema","Tema do material: "+data.tema));
+  if(data.definicao){var s1=secao("s1","📌","Definição / conceito principal");s1.body.appendChild(h("p","def",String(data.definicao)));c.appendChild(s1.el)}
+  if(data.trechos&&data.trechos.length){
+    var s2=secao("s2","📖","Trechos mais importantes");
+    data.trechos.forEach(function(t){var d=h("div","tr");d.appendChild(h("span","tag",t.tipo==="citacao"?"Citação":"Paráfrase"));
+      d.appendChild(h("span","tx",t.tipo==="citacao"?"“"+t.texto+"”":String(t.texto)));
+      var on=h("span","on",(t.arquivo||"")+(t.pagina?" · p. "+t.pagina:""));
+      if(t.pagina){var hit=null;hits.forEach(function(x){if(!hit&&x.n===Number(t.pagina)&&(!t.arquivo||x.file===t.arquivo))hit=x});
+        if(hit){var b=h("button","abrir","Abrir no leitor");b.type="button";b.addEventListener("click",function(){openReader(hit.fileId,hit.n,q,r.exato,hit.file)});on.appendChild(b)}}
+      d.appendChild(on);s2.body.appendChild(d)});
+    c.appendChild(s2.el);
+  }
+  c.appendChild(locSec(hits,q,r.exato));
+  if(data.dica&&data.dica.length){var s4=secao("s4","💡","Dica de estudo: contexto clínico e prático"),ul=h("ul","dicas");
+    data.dica.forEach(function(d){ul.appendChild(h("li",null,String(d)))});s4.body.appendChild(ul);s4.body.appendChild(h("span","orig","Adendo do assistente, fora do material"));c.appendChild(s4.el)}
+  if(data.alternativos&&data.alternativos.length){var a=h("div");a.appendChild(h("div","nota","Termos relacionados no texto:"));a.appendChild(chipsAlt(data.alternativos));c.appendChild(a)}
+  root.appendChild(c);
+}
+function renderLocal(root,q,r){
+  var hits=r.hits||[],c=h("div","resp");c.appendChild(h("h2","termo",q));if(r.motivo)c.appendChild(h("div","aviso",r.motivo));
+  var s2=secao("s2","📖","Trechos encontrados");
+  hits.slice(0,4).forEach(function(x){var d=h("div","tr"),tx=h("span","tx");tx.appendChild(document.createTextNode("…"));marcar(tx,x.snip,q,r.exato);tx.appendChild(document.createTextNode("…"));d.appendChild(tx);
+    var on=h("span","on",x.file+" · "+onde(x)),b=h("button","abrir","Abrir no leitor");b.type="button";b.addEventListener("click",function(){openReader(x.fileId,x.n,q,r.exato,x.file)});on.appendChild(b);d.appendChild(on);s2.body.appendChild(d)});
+  c.appendChild(s2.el);c.appendChild(locSec(hits,q,r.exato));root.appendChild(c);
+}
+function renderNada(root,q,r){
+  var c=h("div","resp");c.appendChild(h("h2","termo",q));var av=h("div","aviso",r.texto+" Tente um sinônimo, a forma sem acento ou um termo mais curto.");
+  if(r.externo){av.appendChild(document.createTextNode(" "));var a=h("a",null,"Pesquisar na web");a.href="https://www.google.com/search?q="+encodeURIComponent(q+" semiologia medicina");a.target="_blank";a.rel="noopener noreferrer";av.appendChild(a);av.appendChild(document.createTextNode("."))}
+  c.appendChild(av);
+  if(r.alternativos&&r.alternativos.length){c.appendChild(h("div","nota","Experimente estes termos presentes no texto:"));c.appendChild(chipsAlt(r.alternativos))}
+  if(r.hits&&r.hits.length){var s=secao("s3","📍","Páginas com palavras parecidas");s.body.appendChild(tabela(r.hits,q,r.exato));c.appendChild(s.el)}
+  root.appendChild(c);
+}
+function activeConv(){for(var i=0;i<convs.length;i++)if(convs[i].id===activeId)return convs[i];return null}
+function renderHead(){
+  var hd=$("head");hd.textContent="";var c=activeConv();
+  if(!c){hd.appendChild(h("h2",null,"Pesquisa de termos e conceitos"));return}
+  hd.appendChild(h("h2",null,c.nome||"Sem nome"));
+  hd.appendChild(h("div","nota",files.length+(files.length===1?" arquivo":" arquivos")+" · "+msgs.length+(msgs.length===1?" busca salva":" buscas salvas")));
+}
+function renderFiltro(){
+  var sel=$("fDoc"),atual=sel.value;sel.textContent="";
+  var o=h("option",null,"Todos os arquivos da conversa");o.value="ALL";sel.appendChild(o);
+  files.forEach(function(f){var op=h("option",null,f.nome);op.value=f.id;sel.appendChild(op)});
+  sel.value=files.some(function(f){return f.id===atual})?atual:"ALL";
+}
+function renderMain(){
+  renderHead();
+  var inner=$("inner");inner.textContent="";
+  var c=activeConv(),canAsk=!!c;
+  $("q").disabled=!canAsk;$("enviar").disabled=!canAsk||busy;
+  if(!convs.length){var v=h("div","vazio");v.appendChild(h("h2",null,"Crie sua primeira conversa"));
+    v.appendChild(h("div",null,"Cada conversa guarda os próprios arquivos e buscas, por exemplo uma para Fisiologia médica e outra para Semiologia. Use o botão “+ Nova conversa”, no canto inferior esquerdo."));inner.appendChild(v);return}
+  if(!msgs.length&&!pending){
+    var v2=h("div","vazio");v2.appendChild(h("h2",null,"O que você quer procurar?"));
+    v2.appendChild(h("div",null,"Digite um termo ou conceito e eu busco nos arquivos desta conversa."));
+    var ps=h("div","passos");[["1. Envie","Use “Adicionar arquivos”, no topo, ou a aba Arquivos."],["2. Digite","Procure o termo no campo abaixo."],["3. Abra","Veja a página com o termo grifado no leitor."]].forEach(function(p){var d=h("div");d.appendChild(h("b",null,p[0]));d.appendChild(document.createTextNode(p[1]));ps.appendChild(d)});
+    v2.appendChild(ps);inner.appendChild(v2);
+  }
+  msgs.forEach(function(m){
+    inner.appendChild(h("div","eu",m.q));var box=h("div"),r=m.resp||{};inner.appendChild(box);
+    if(r.tipo==="ficha")renderFicha(box,m.q,r);else if(r.tipo==="local")renderLocal(box,m.q,r);else renderNada(box,m.q,r);
+  });
+  if(pending){inner.appendChild(h("div","eu",pending.q));inner.appendChild(h("div","status",pending.text))}
+  if(notice)inner.appendChild(h("div","aviso",notice));
+  var ch=$("chat");ch.scrollTop=ch.scrollHeight;
+}
+function renderAll(){renderSb();renderFiltro();renderMain();renderReader()}
+
+/* ===== Navegação, modais e entradas ===== */
+function showView(v){document.body.classList.toggle("leitor",v==="leitor");$("tmChat").classList.toggle("on",v!=="leitor");$("tmLeitor").classList.toggle("on",v==="leitor")}
+function fechaDrawer(){document.body.classList.remove("sb-open")}
+$("tmChat").addEventListener("click",function(){showView("chat")});
+$("tmLeitor").addEventListener("click",function(){showView("leitor")});
+$("bSb").addEventListener("click",function(){if(window.innerWidth<=900)document.body.classList.toggle("sb-open");else document.body.classList.toggle("sb-off")});
+$("ovl").addEventListener("click",fechaDrawer);
+function modal(id,open){$(id).hidden=!open}
+$("bAjuda").addEventListener("click",function(){modal("mAjuda",true)});
+$("bDados").addEventListener("click",function(){modal("mDados",true)});
+Array.prototype.forEach.call(document.querySelectorAll("[data-fecha]"),function(b){b.addEventListener("click",function(){modal("mAjuda",false);modal("mDados",false)})});
+Array.prototype.forEach.call(document.querySelectorAll(".modal"),function(m){m.addEventListener("click",function(e){if(e.target===m)m.hidden=true})});
+document.addEventListener("keydown",function(e){if(e.key==="Escape"){if(!pop.hidden)togglePop(false);modal("mAjuda",false);modal("mDados",false);fechaDrawer()}});
+
+var q=$("q");
+$("form").addEventListener("submit",function(e){e.preventDefault();var v=q.value;q.value="";q.style.height="auto";ask(v)});
+q.addEventListener("keydown",function(e){if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("form").requestSubmit()}});
+q.addEventListener("input",function(){q.style.height="auto";q.style.height=Math.min(q.scrollHeight,140)+"px"});
+
+setBadge();renderAll();init();
+})();
+</script>
 </body>
 </html>
