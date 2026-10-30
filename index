@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>MedSearch Studio - Assistente de Estudos & Leitor Inteligente</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- Mammoth.js (Word .docx) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+
+  <!-- PDF.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window['pdfjs-dist/build/pdf']) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
+
+  <style>
+    /* Suporte a Dvh para mobile iOS/Android */
+    .app-height {
+      height: 100vh;
+      height: 100dvh;
+    }
+    
+    /* Scrollbars elegantes */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.3);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(156, 163, 175, 0.5);
+    }
+
+    /* Animação do Highlight no documento */
+    @keyframes pulseHighlight {
+      0% { background-color: rgba(250, 204, 21, 0.8); }
+      50% { background-color: rgba(250, 204, 21, 0.4); }
+      100% { background-color: rgba(250, 204, 21, 0.25); }
+    }
+    .highlight-active {
+      animation: pulseHighlight 2s ease-in-out infinite;
+      border-left: 4px solid #eab308;
+      padding-left: 8px;
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans antialiased overflow-hidden app-height flex flex-col">
+
+  <!-- TOP BAR / HEADER -->
+  <header class="h-14 bg-slate-800/90 border-b border-slate-700/80 px-3 md:px-4 flex items-center justify-between shrink-0 z-20 backdrop-blur">
+    
+    <!-- Lado Esquerdo: Logo e Botão de Gaveta -->
+    <div class="flex items-center space-x-2 md:space-x-3">
+      <button id="toggle-sidebar-btn" title="Expandir/Recolher Menu Lateral" class="p-2 text-slate-300 hover:text-white hover:bg-slate-700/60 rounded-lg transition flex items-center justify-center">
+        <i class="ph ph-sidebar text-xl"></i>
+      </button>
+      
+      <div class="flex items-center space-x-2">
+        <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/20">
+          <i class="ph ph-magnifying-glass-plus text-lg"></i>
+        </div>
+        <div>
+          <h1 class="font-bold text-sm md:text-base leading-none text-slate-100 flex items-center gap-2">
+            MedSearch Studio
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-normal border border-indigo-500/30">v2.5</span>
+          </h1>
+          <p class="text-[10px] text-slate-400 hidden sm:block">Filtro de Arquivos & Assistente de Semiologia</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alternador de Modos Mobile (Chat vs Leitor) -->
+    <div class="flex md:hidden bg-slate-900/80 p-1 rounded-lg border border-slate-700/60 text-xs">
+      <button id="mobile-tab-chat" class="px-2.5 py-1 rounded-md bg-indigo-600 text-white font-medium flex items-center gap-1">
+        <i class="ph ph-chat-circle-text"></i> Chat
+      </button>
+      <button id="mobile-tab-doc" class="px-2.5 py-1 rounded-md text-slate-400 hover:text-slate-200 flex items-center gap-1">
+        <i class="ph ph-file-text"></i> Leitor
+      </button>
+    </div>
+
+    <!-- Lado Direito: Ações Principais (Upload, Tutoriais, Backup) -->
+    <div class="flex items-center space-x-1.5 md:space-x-2">
+      <!-- BOTÃO PRINCIPAL DE UPLOAD -->
+      <button id="top-upload-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-2.5 py-1.5 md:px-3 md:py-1.5 rounded-lg text-xs md:text-sm font-medium flex items-center gap-1.5 shadow-md shadow-indigo-600/20 transition">
+        <i class="ph ph-upload-simple text-base"></i>
+        <span class="hidden sm:inline">Adicionar Arquivos</span>
+      </button>
+
+      <div class="h-5 w-px bg-slate-700 mx-0.5 hidden sm:block"></div>
+
+      <!-- Botão Guia / Tutorial -->
+      <button id="btn-tutorial" title="Como Funciona?" class="p-1.5 md:px-2.5 md:py-1.5 text-slate-300 hover:text-white hover:bg-slate-700/60 rounded-lg text-xs flex items-center gap-1 transition">
+        <i class="ph ph-question text-lg text-amber-400"></i>
+        <span class="hidden md:inline font-medium">Como Usar</span>
+      </button>
+
+      <!-- Botão Config / Backup -->
+      <button id="btn-backup-modal" title="Backup e Dados" class="p-1.5 md:px-2.5 md:py-1.5 text-slate-300 hover:text-white hover:bg-slate-700/60 rounded-lg text-xs flex items-center gap-1 transition">
+        <i class="ph ph-database text-lg text-emerald-400"></i>
+        <span class="hidden md:inline font-medium">Backup</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ÁREA PRINCIPAL DO WORKSPACE -->
+  <div class="flex-1 flex relative overflow-hidden">
+    
+    <!-- OVERLAY MOBILE PARA SIDEBAR -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-30 hidden transition-opacity md:hidden"></div>
+
+    <!-- 1. PAINEL LATERAL (RETRAÁVEL E REDIMENSIONÁVEL) -->
+    <aside id="sidebar-panel" class="fixed md:relative z-40 inset-y-0 left-0 w-80 md:w-80 bg-slate-800/95 md:bg-slate-800/60 border-r border-slate-700/70 flex flex-col transition-all duration-300 shrink-0 transform -translate-x-full md:translate-x-0">
+      
+      <!-- Abas da Sidebar -->
+      <div class="flex items-center border-b border-slate-700/70 bg-slate-900/40 text-xs font-medium text-slate-400">
+        <button id="tab-btn-chats" class="flex-1 py-2.5 px-2 border-b-2 border-indigo-500 text-indigo-400 font-semibold flex items-center justify-center gap-1.5">
+          <i class="ph ph-chat-circle text-base"></i> Conversas
+        </button>
+        <button id="tab-btn-docs" class="flex-1 py-2.5 px-2 border-b-2 border-transparent hover:text-slate-200 flex items-center justify-center gap-1.5">
+          <i class="ph ph-files text-base"></i> Arquivos (<span id="file-count-badge">0</span>)
+        </button>
+        <button id="tab-btn-history" class="flex-1 py-2.5 px-2 border-b-2 border-transparent hover:text-slate-200 flex items-center justify-center gap-1.5">
+          <i class="ph ph-clock-counter-clockwise text-base"></i> Buscas
+        </button>
+      </div>
+
+      <!-- Conteúdo das Abas da Sidebar -->
+      <div class="flex-1 overflow-y-auto p-3 space-y-3">
+        
+        <!-- ABA CHATS -->
+        <div id="tab-content-chats" class="space-y-2">
+          <button id="btn-new-chat" class="w-full py-2 px-3 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-indigo-200 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition">
+            <i class="ph ph-plus-circle text-base"></i> Novo Chat de Estudo
+          </button>
+          
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-1 pt-2">Seus Chats</div>
+          <div id="chats-list" class="space-y-1">
+            <!-- Lista de Chats Dinâmica -->
+          </div>
+        </div>
+
+        <!-- ABA ARQUIVOS CARREGADOS -->
+        <div id="tab-content-docs" class="space-y-2 hidden">
+          <!-- Drop Area na Sidebar -->
+          <div id="sidebar-drop-zone" class="border-2 border-dashed border-slate-600 hover:border-indigo-400 rounded-xl p-3 text-center transition cursor-pointer bg-slate-900/30">
+            <i class="ph ph-cloud-arrow-up text-2xl text-indigo-400 mb-1"></i>
+            <p class="text-xs font-medium text-slate-200">Solte seus arquivos aqui</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">Suporta PDF, DOCX, TXT e MD</p>
+          </div>
+
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-1 pt-2">Documentos Ativos</div>
+          <div id="files-list" class="space-y-1.5">
+            <!-- Lista Dinâmica de Arquivos -->
+            <p class="text-xs text-slate-500 italic p-2 text-center">Nenhum arquivo carregado ainda.</p>
+          </div>
+        </div>
+
+        <!-- ABA HISTÓRICO DE BUSCAS -->
+        <div id="tab-content-history" class="space-y-2 hidden">
+          <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider px-1">Termos Pesquisados</div>
+          <div id="history-list" class="space-y-1">
+            <p class="text-xs text-slate-500 italic p-2 text-center">Nenhum histórico recente.</p>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Rodapé da Sidebar (Status de Sincronização) -->
+      <div class="p-2.5 border-t border-slate-700/70 bg-slate-900/50 text-[11px] text-slate-400 flex items-center justify-between">
+        <span class="flex items-center gap-1.5">
+          <span id="sync-indicator" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="sync-text">Sincronizado (Local/Nuvem)</span>
+        </span>
+        <button id="btn-quick-export" title="Exportar Cópia de Segurança" class="hover:text-white text-slate-400">
+          <i class="ph ph-download-simple"></i>
+        </button>
+      </div>
+
+      <!-- Handle para Redimensionar (Desktop) -->
+      <div id="sidebar-resizer" class="hidden md:block absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-indigo-500/50 transition"></div>
+    </aside>
+
+
+    <!-- 2. ÁREA CENTRAL DE CHAT E PESQUISA (DESTAQUE DA PÁGINA) -->
+    <main id="view-chat-container" class="flex-1 flex flex-col bg-slate-900 relative z-10 w-full overflow-hidden">
+      
+      <!-- BARRA DE FILTROS & CONFIGURAÇÃO DE BUSCA -->
+      <div class="p-2.5 md:p-3 bg-slate-800/40 border-b border-slate-700/60 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div class="flex items-center gap-2 text-xs">
+          <span class="text-slate-400 font-medium flex items-center gap-1">
+            <i class="ph ph-funnel text-indigo-400"></i> Buscar em:
+          </span>
+          <select id="doc-filter-select" class="bg-slate-800 border border-slate-700 text-slate-200 rounded-md px-2 py-1 text-xs focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+            <option value="ALL">Todos os Documentos Carregados</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-3 text-xs">
+          <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer select-none">
+            <input type="checkbox" id="check-exact-match" class="rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-800">
+            Palavra Exata
+          </label>
+          <label class="flex items-center gap-1.5 text-slate-300 cursor-pointer select-none">
+            <input type="checkbox" id="check-web-fallback" checked class="rounded border-slate-700 text-indigo-600 focus:ring-indigo-500 bg-slate-800">
+            Buscar fora se não achar
+          </label>
+        </div>
+      </div>
+
+      <!-- MENSAGENS DO CHAT & RESULTADOS DAS PESQUISAS -->
+      <div id="chat-messages" class="flex-1 overflow-y-auto p-3 md:p-5 space-y-4">
+        
+        <!-- Boas-Vindas Didática (Sempre visível inicialmente) -->
+        <div id="welcome-banner" class="max-w-2xl mx-auto bg-slate-800/80 border border-slate-700/80 rounded-2xl p-4 md:p-6 text-center space-y-3 shadow-xl">
+          <div class="w-12 h-12 bg-indigo-500/20 text-indigo-400 rounded-2xl flex items-center justify-center mx-auto text-2xl border border-indigo-500/30">
+            <i class="ph ph-books"></i>
+          </div>
+          <h2 class="text-base md:text-lg font-bold text-slate-100">Como funciona o seu Assistente de Estudos?</h2>
+          <p class="text-xs md:text-sm text-slate-300 leading-relaxed">
+            Envie seus **livros de Medicina, resumos ou artigos (PDF, DOCX, TXT)**. Quando você pesquisar por um termo como <span class="bg-indigo-900/60 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-700/50 font-mono text-xs">Anamnese</span> ou <span class="bg-indigo-900/60 text-indigo-300 px-1.5 py-0.5 rounded border border-indigo-700/50 font-mono text-xs">Sopro cardíaco</span>, o sistema fará a varredura e abrirá o arquivo direto na página do trecho explicativo!
+          </p>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-left pt-2">
+            <div class="p-2.5 bg-slate-900/60 rounded-xl border border-slate-700/50">
+              <div class="text-indigo-400 font-semibold text-xs mb-1 flex items-center gap-1"><i class="ph ph-upload-simple"></i> 1. Envie</div>
+              <p class="text-[11px] text-slate-400">Clique em "Adicionar Arquivos" no topo.</p>
+            </div>
+            <div class="p-2.5 bg-slate-900/60 rounded-xl border border-slate-700/50">
+              <div class="text-indigo-400 font-semibold text-xs mb-1 flex items-center gap-1"><i class="ph ph-magnifying-glass"></i> 2. Digite</div>
+              <p class="text-[11px] text-slate-400">Procure o termo desejado no chat.</p>
+            </div>
+            <div class="p-2.5 bg-slate-900/60 rounded-xl border border-slate-700/50">
+              <div class="text-indigo-400 font-semibold text-xs mb-1 flex items-center gap-1"><i class="ph ph-cursor-click"></i> 3. Abra</div>
+              <p class="text-[11px] text-slate-400">Veja o contexto direto no leitor ao lado!</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CAMPO DE ENTRADA / BARRA DE PESQUISA DO CHAT -->
+      <div class="p-3 md:p-4 bg-slate-800/80 border-t border-slate-700/80 shrink-0">
+        <form id="chat-form" class="max-w-4xl mx-auto relative flex items-center gap-2">
+          
+          <!-- Botão Anexar Rápido -->
+          <button type="button" id="btn-attach-file" title="Anexar arquivo PDF/DOCX" class="p-2.5 bg-slate-700/70 hover:bg-slate-600 text-slate-200 rounded-xl transition flex items-center justify-center shrink-0">
+            <i class="ph ph-paperclip text-lg"></i>
+          </button>
+
+          <!-- Input de Texto -->
+          <div class="relative flex-1">
+            <input type="text" id="chat-input" placeholder="Digite uma palavra ou conceito para filtrar nos arquivos (ex: Anamnese, Estetoscópio)..." 
+              class="w-full bg-slate-900/90 border border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 text-slate-100 placeholder-slate-400 text-xs md:text-sm rounded-xl py-3 pl-4 pr-10 outline-none transition">
+            
+            <button type="submit" id="btn-submit" class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition flex items-center justify-center">
+              <i class="ph ph-paper-plane-right text-base"></i>
+            </button>
+          </div>
+
+        </form>
+        <p class="text-[10px] text-slate-500 text-center mt-1.5">
+          Suporte ativo para arquivos localmente e em nuvem. Se o termo não estiver no arquivo, o robô fará a pesquisa externa.
+        </p>
+      </div>
+
+    </main>
+
+
+    <!-- 3. VISUALIZADOR DO DOCUMENTO (PAINEL DIREITO INTEGRADO) -->
+    <section id="view-doc-container" class="w-full md:w-[450px] lg:w-[500px] bg-slate-850 border-l border-slate-700/70 flex flex-col hidden md:flex shrink-0 transition-all">
+      
+      <!-- Cabeçalho do Leitor -->
+      <div class="p-3 bg-slate-800/80 border-b border-slate-700/70 flex items-center justify-between shrink-0">
+        <div class="flex items-center space-x-2 truncate">
+          <i class="ph ph-book-open text-indigo-400 text-lg"></i>
+          <span id="current-doc-title" class="font-semibold text-xs md:text-sm text-slate-200 truncate">Visualizador de Documentos</span>
+        </div>
+        <div class="flex items-center space-x-1">
+          <span id="doc-meta-badge" class="text-[10px] px-2 py-0.5 rounded bg-slate-700 text-slate-300">Nenhum arquivo ativo</span>
+          <button id="close-doc-viewer" class="p-1 text-slate-400 hover:text-white rounded md:hidden">
+            <i class="ph ph-x text-lg"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Conteúdo do Documento com Scroll e Destaque de Texto -->
+      <div id="doc-viewer-content" class="flex-1 overflow-y-auto p-4 font-serif text-slate-300 text-xs md:text-sm leading-relaxed space-y-3 selection:bg-indigo-500 selection:text-white">
+        <div class="flex flex-col items-center justify-center h-full text-center text-slate-500 font-sans space-y-2">
+          <i class="ph ph-file-text text-4xl opacity-40"></i>
+          <p class="text-xs">Selecione um arquivo ou clique em um resultado de pesquisa para abri-lo e ler o contexto completo aqui.</p>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+
+  <!-- INPUT DE ARQUIVO INVISÍVEL -->
+  <input type="file" id="hidden-file-input" multiple accept=".pdf,.docx,.txt,.md" class="hidden">
+
+  <!-- MODAL TUTORIAL / COMO USAR -->
+  <div id="modal-tutorial" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+        <h3 class="font-bold text-slate-100 flex items-center gap-2 text-base">
+          <i class="ph ph-graduation-cap text-indigo-400 text-xl"></i> Guia Rápido de Uso
+        </h3>
+        <button class="close-modal text-slate-400 hover:text-white"><i class="ph ph-x text-lg"></i></button>
+      </div>
+      <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
+        <p><strong>1. Carregar Livros ou Cadernos:</strong> Clique em <span class="text-indigo-400 font-medium">"Adicionar Arquivos"</span> no topo para enviar PDFs ou Word (.docx).</p>
+        <p><strong>2. Filtrar Palavras-Chave:</strong> Digite termos médicos ou de estudos na barra inferior (ex: <i>ausculta, anamnese, diabetes</i>).</p>
+        <p><strong>3. Ir direto ao Ponto:</strong> O chat mostrará o trecho extraído. Ao clicar no botão <span class="bg-indigo-600 text-white px-1.5 py-0.5 rounded">Abrir no Leitor</span>, o documento se abre exatamente no trecho grifado em amarelo.</p>
+        <p><strong>4. Pesquisa Externa Fallback:</strong> Se a palavra não existir nos seus livros, o sistema fará a pesquisa na web automaticamente para não deixar você sem resposta.</p>
+      </div>
+      <button class="close-modal w-full py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl text-xs transition">Entendi, Vamos Começar!</button>
+    </div>
+  </div>
+
+  <!-- MODAL BACKUP / GERENCIAMENTO DE DADOS -->
+  <div id="modal-backup" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+        <h3 class="font-bold text-slate-100 flex items-center gap-2 text-base">
+          <i class="ph ph-database text-emerald-400 text-xl"></i> Salvamento & Backup
+        </h3>
+        <button class="close-modal text-slate-400 hover:text-white"><i class="ph ph-x text-lg"></i></button>
+      </div>
+      <p class="text-xs text-slate-300">
+        Todos os seus dados (histórico de buscas, conversas e textos extraídos) ficam gravados automaticamente na memória local do seu navegador e prontos para sincronização em nuvem.
+      </p>
+      
+      <div class="space-y-2 pt-2">
+        <button id="btn-export-json" class="w-full py-2.5 px-3 bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border border-slate-600 transition">
+          <i class="ph ph-download-simple text-base text-emerald-400"></i> Fazer Baixar Cópia de Segurança (JSON)
+        </button>
+        <button id="btn-import-trigger" class="w-full py-2.5 px-3 bg-slate-700 hover:bg-slate-600 text-slate-100 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border border-slate-600 transition">
+          <i class="ph ph-upload-simple text-base text-indigo-400"></i> Restaurar Dados de Backup
+        </button>
+        <input type="file" id="backup-file-input" accept=".json" class="hidden">
+      </div>
+
+      <button class="close-modal w-full py-2 bg-slate-700 text-slate-300 rounded-xl text-xs transition">Fechar</button>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT PRINCIPAL DA APLICAÇÃO -->
+  <script>
+    // --- ESTADO GLOBAL DA APLICAÇÃO ---
+    const state = {
+      files: {}, // { fileId: { id, name, text, paragraphs: [] } }
+      chats: [
+        { id: 'chat-default', title: 'Estudo Principal', messages: [] }
+      ],
+      currentChatId: 'chat-default',
+      searchHistory: [],
+      activeDocId: null
+    };
+
+     // --- CARREGAMENTO INICIAL E DELEGACÃO DE EVENTOS --- 
+    document.addEventListener('DOMContentLoaded', () => {
+      loadStateFromStorage();
+      setupEventListeners();
+      renderChatsList();
+      renderFilesList();
+      renderHistoryList();
+      updateDocFilterSelect();
+    });
+
+    function setupEventListeners() {
+      // Toggle de Sidebar Mobile & Desktop
+      const sidebar = document.getElementById('sidebar-panel');
+      const overlay = document.getElementById('sidebar-overlay');
+      const toggleBtn = document.getElementById('toggle-sidebar-btn');
+
+      toggleBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('hidden');
+      });
+
+      overlay.addEventListener('click', () => {
+        sidebar.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      });
+
+      // Alternador de Abas do Mobile (Chat vs Leitor)
+      const tabChat = document.getElementById('mobile-tab-chat');
+      const tabDoc = document.getElementById('mobile-tab-doc');
+      const viewChat = document.getElementById('view-chat-container');
+      const viewDoc = document.getElementById('view-doc-container');
+
+      tabChat.addEventListener('click', () => {
+        tabChat.classList.add('bg-indigo-600', 'text-white');
+        tabChat.classList.remove('text-slate-400');
+        tabDoc.classList.remove('bg-indigo-600', 'text-white');
+        tabDoc.classList.add('text-slate-400');
+        viewChat.classList.remove('hidden');
+        viewDoc.classList.add('hidden');
+      });
+
+      tabDoc.addEventListener('click', () => {
+        tabDoc.classList.add('bg-indigo-600', 'text-white');
+        tabDoc.classList.remove('text-slate-400');
+        tabChat.classList.remove('bg-indigo-600', 'text-white');
+        tabChat.classList.add('text-slate-400');
+        viewDoc.classList.remove('hidden');
+        viewChat.classList.add('hidden');
+      });
+
+      document.getElementById('close-doc-viewer').addEventListener('click', () => {
+        tabChat.click();
+      });
+
+      // Abas da Sidebar (Chats / Arquivos / Histórico)
+      const tabBtnChats = document.getElementById('tab-btn-chats');
+      const tabBtnDocs = document.getElementById('tab-btn-docs');
+      const tabBtnHistory = document.getElementById('tab-btn-history');
+      const tabContentChats = document.getElementById('tab-content-chats');
+      const tabContentDocs = document.getElementById('tab-content-docs');
+      const tabContentHistory = document.getElementById('tab-content-history');
+
+      function switchSidebarTab(activeBtn, showContent) {
+        [tabBtnChats, tabBtnDocs, tabBtnHistory].forEach(btn => {
+          btn.classList.remove('border-indigo-500', 'text-indigo-400', 'font-semibold');
+          btn.classList.add('border-transparent', 'text-slate-400');
+        });
+        [tabContentChats, tabContentDocs, tabContentHistory].forEach(c => c.classList.add('hidden'));
+
+        activeBtn.classList.add('border-indigo-500', 'text-indigo-400', 'font-semibold');
+        activeBtn.classList.remove('border-transparent', 'text-slate-400');
+        showContent.classList.remove('hidden');
+      }
+
+      tabBtnChats.addEventListener('click', () => switchSidebarTab(tabBtnChats, tabContentChats));
+      tabBtnDocs.addEventListener('click', () => switchSidebarTab(tabBtnDocs, tabContentDocs));
+      tabBtnHistory.addEventListener('click', () => switchSidebarTab(tabBtnHistory, tabContentHistory));
+
+      // Botões de Upload
+      const fileInput = document.getElementById('hidden-file-input');
+      document.getElementById('top-upload-btn').addEventListener('click', () => fileInput.click());
+      document.getElementById('btn-attach-file').addEventListener('click', () => fileInput.click());
+      document.getElementById('sidebar-drop-zone').addEventListener('click', () => fileInput.click());
+
+      fileInput.addEventListener('change', (e) => handleFileUpload(e.target.files));
+
+      // Formulário do Chat e Pesquisa
+      document.getElementById('chat-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        const term = input.value.trim();
+        if (term) {
+          executeSearchAndChat(term);
+          input.value = '';
+        }
+      });
+
+      // Novo Chat
+      document.getElementById('btn-new-chat').addEventListener('click', () => {
+        const newChat = {
+          id: 'chat-' + Date.now(),
+          title: 'Novo Estudo ' + (state.chats.length + 1),
+          messages: []
+        };
+        state.chats.push(newChat);
+        state.currentChatId = newChat.id;
+        saveStateToStorage();
+        renderChatsList();
+        renderChatMessages();
+      });
+
+      // Modais (Tutorial e Backup)
+      const modalTut = document.getElementById('modal-tutorial');
+      const modalBac = document.getElementById('modal-backup');
+
+      document.getElementById('btn-tutorial').addEventListener('click', () => modalTut.classList.remove('hidden'));
+      document.getElementById('btn-backup-modal').addEventListener('click', () => modalBac.classList.remove('hidden'));
+
+      document.querySelectorAll('.close-modal').forEach(btn => {
+        btn.addEventListener('click', () => {
+          modalTut.classList.add('hidden');
+          modalBac.classList.add('hidden');
+        });
+      });
+
+      // Exportar / Importar JSON
+      document.getElementById('btn-export-json').addEventListener('click', exportBackupJSON);
+      document.getElementById('btn-quick-export').addEventListener('click', exportBackupJSON);
+      
+      const backupInput = document.getElementById('backup-file-input');
+      document.getElementById('btn-import-trigger').addEventListener('click', () => backupInput.click());
+      backupInput.addEventListener('change', importBackupJSON);
+    }
+
+    // --- LEITURA E PROCESSAMENTO DE ARQUIVOS (PDF, DOCX, TXT) ---
+    async function handleFileUpload(fileList) {
+      if (!fileList || fileList.length === 0) return;
+
+      for (let i = 0; i < fileList.length; i++) {
+        const file = fileList[i];
+        const fileId = 'doc-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4);
+        
+        try {
+          let text = '';
+          if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
+            text = await extractTextFromPDF(file);
+          } else if (file.name.endsWith('.docx')) {
+            text = await extractTextFromDOCX(file);
+          } else {
+            text = await file.text();
+          }
+
+          const paragraphs = text.split(/\n\s*\n/).map(p => p.trim()).filter(p => p.length > 0);
+
+          state.files[fileId] = {
+            id: fileId,
+            name: file.name,
+            size: (file.size / 1024 / 1024).toFixed(2) + ' MB',
+            text: text,
+            paragraphs: paragraphs
+          };
+
+          addSystemChatMessage(`✅ Arquivo **"${file.name}"** carregado com sucesso! Pronto para pesquisa de palavras-chave.`);
+        } catch (err) {
+          console.error(err);
+          addSystemChatMessage(`❌ Erro ao ler o arquivo **"${file.name}"**. Certifique-se de que é um documento válido.`);
+        }
+      }
+
+      saveStateToStorage();
+      renderFilesList();
+      updateDocFilterSelect();
+
+      // Esconde o welcome banner se já tiver mensagens
+      document.getElementById('welcome-banner').classList.add('hidden');
+    }
+
+    function extractTextFromPDF(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = async function() {
+          try {
+            const typedarray = new Uint8Array(this.result);
+            const pdf = await pdfjsLib.getDocument(typedarray).promise;
+            let fullText = '';
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const textContent = await page.getTextContent();
+              const pageText = textContent.items.map(item => item.str).join(' ');
+              fullText += `\n\n--- Página ${i} ---\n\n` + pageText;
+            }
+            resolve(fullText);
+          } catch (e) {
+            reject(e);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    function extractTextFromDOCX(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          mammoth.extractRawText({ arrayBuffer: e.target.result })
+            .then(result => resolve(result.value))
+            .catch(err => reject(err));
+        };
+        reader.readAsArrayBuffer(file);
+      });
+    }
+
+    // --- MECANISMO DE BUSCA E CHAT ---
+    function executeSearchAndChat(searchTerm) {
+      const currentChat = state.chats.find(c => c.id === state.currentChatId);
+      if (!currentChat) return;
+
+      // Adiciona mensagem do Usuário
+      currentChat.messages.push({ sender: 'user', text: searchTerm, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
+      
+      // Adiciona ao Histórico de Busca
+      if (!state.searchHistory.includes(searchTerm)) {
+        state.searchHistory.unshift(searchTerm);
+      }
+
+      // Parâmetros de Pesquisa
+      const filterDocId = document.getElementById('doc-filter-select').value;
+      const isExact = document.getElementById('check-exact-match').checked;
+      const allowWebFallback = document.getElementById('check-web-fallback').checked;
+
+      let targetFiles = Object.values(state.files);
+      if (filterDocId !== 'ALL') {
+        targetFiles = targetFiles.filter(f => f.id === filterDocId);
+      }
+
+      // Executa filtro nos parágrafos dos arquivos
+      let results = [];
+      const regex = new RegExp(isExact ? `\\b${escapeRegExp(searchTerm)}\\b` : escapeRegExp(searchTerm), 'gi');
+
+      targetFiles.forEach(file => {
+        file.paragraphs.forEach((para, index) => {
+          if (regex.test(para)) {
+            results.push({
+              fileId: file.id,
+              fileName: file.name,
+              paragraphIndex: index,
+              snippet: para
+            });
+          }
+        });
+      });
+
+      // Gera Resposta do Assistente
+      let botResponse = {
+        sender: 'bot',
+        searchTerm: searchTerm,
+        results: results,
+        webFallbackUsed: false,
+        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+      };
+
+      if (results.length === 0 && allowWebFallback) {
+        botResponse.webFallbackUsed = true;
+        botResponse.fallbackInfo = {
+          title: `Resultados externos para "${searchTerm}"`,
+          summary: `O termo "${searchTerm}" não foi encontrado nos documentos carregados localmente. Em termos médicos/acadêmicos, **${searchTerm}** refere-se ao estudo ou procedimento relacionado à semiologia/diagnóstico clínico.`,
+          suggestionUrl: `https://www.google.com/search?q=${encodeURIComponent(searchTerm + ' semiologia medicina')}`
+        };
+      }
+
+      currentChat.messages.push(botResponse);
+      saveStateToStorage();
+      renderChatMessages();
+      renderHistoryList();
+
+      // Esconde o banner inicial
+      document.getElementById('welcome-banner').classList.add('hidden');
+    }
+
+    // --- RENDERIZAÇÃO DA INTERFACE ---
+    function renderChatMessages() {
+      const chatContainer = document.getElementById('chat-messages');
+      const currentChat = state.chats.find(c => c.id === state.currentChatId);
+      
+      if (!currentChat || currentChat.messages.length === 0) {
+        chatContainer.innerHTML = '';
+        document.getElementById('welcome-banner').classList.remove('hidden');
+        chatContainer.appendChild(document.getElementById('welcome-banner'));
+        return;
+      }
+
+      chatContainer.innerHTML = '';
+
+      currentChat.messages.forEach(msg => {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = 'flex flex-col space-y-1 max-w-3xl mx-auto';
+
+        if (msg.sender === 'user') {
+          msgDiv.innerHTML = `
+            <div class="self-end bg-indigo-600 text-white rounded-2xl rounded-tr-none px-4 py-2.5 text-xs md:text-sm max-w-[85%] shadow-md">
+              <p class="font-medium">${escapeHTML(msg.text)}</p>
+              <span class="text-[9px] text-indigo-200 block text-right mt-1">${msg.time}</span>
+            </div>
+          `;
+        } else if (msg.sender === 'system') {
+          msgDiv.innerHTML = `
+            <div class="self-center bg-slate-800/90 border border-slate-700/70 text-slate-300 rounded-xl px-3 py-1.5 text-xs text-center">
+              ${msg.text}
+            </div>
+          `;
+        } else {
+          // Resposta com Resultados de Busca
+          let resultsHTML = '';
+          
+          if (msg.results && msg.results.length > 0) {
+            resultsHTML = `
+              <div class="space-y-2 mt-2">
+                <p class="text-xs text-slate-300 font-semibold flex items-center gap-1.5">
+                  <i class="ph ph-check-circle text-emerald-400"></i>
+                  Encontradas ${msg.results.length} ocorrência(s) para "<strong>${escapeHTML(msg.searchTerm)}</strong>":
+                </p>
+                <div class="space-y-2 max-h-80 overflow-y-auto pr-1">
+                  ${msg.results.slice(0, 8).map(res => `
+                    <div class="p-3 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs space-y-1.5">
+                      <div class="flex items-center justify-between text-[11px] text-indigo-400 font-medium">
+                        <span class="truncate"><i class="ph ph-file-text"></i> ${escapeHTML(res.fileName)}</span>
+                        <span>Trecho #${res.paragraphIndex + 1}</span>
+                      </div>
+                      <p class="text-slate-300 italic line-clamp-3 leading-relaxed">
+                        "${highlightText(res.snippet, msg.searchTerm)}"
+                      </p>
+                      <button onclick="openDocAtParagraph('${res.fileId}', ${res.paragraphIndex}, '${escapeRegExp(msg.searchTerm)}')" 
+                        class="mt-1 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white px-2.5 py-1 rounded-lg text-[11px] font-semibold flex items-center gap-1 transition border border-indigo-500/40">
+                        <i class="ph ph-arrow-square-out"></i> Abrir Direto no Leitor
+                      </button>
+                    </div>
+                  `).join('')}
+                </div>
+              </div>
+            `;
+          } else if (msg.webFallbackUsed) {
+            resultsHTML = `
+              <div class="p-3 bg-amber-950/30 border border-amber-600/40 rounded-xl text-xs space-y-2 mt-2">
+                <p class="text-amber-300 font-semibold flex items-center gap-1.5">
+                  <i class="ph ph-warning-circle text-base"></i> Termo não encontrado nos seus arquivos locais.
+                </p>
+                <p class="text-slate-300 leading-relaxed">${msg.fallbackInfo.summary}</p>
+                <a href="${msg.fallbackInfo.suggestionUrl}" target="_blank" class="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 font-medium underline">
+                  <i class="ph ph-magnifying-glass font-bold"></i> Pesquisar sobre "${msg.searchTerm}" no Google Acadêmico / Web
+                </a>
+              </div>
+            `;
+          }
+
+          msgDiv.innerHTML = `
+            <div class="self-start bg-slate-800 border border-slate-700/80 rounded-2xl rounded-tl-none p-3.5 md:p-4 text-xs md:text-sm w-full max-w-[95%] shadow-md space-y-2">
+              <div class="flex items-center justify-between border-b border-slate-700/60 pb-1.5">
+                <span class="font-bold text-indigo-400 flex items-center gap-1.5">
+                  <i class="ph ph-robot text-base"></i> Assistente de Pesquisa
+                </span>
+                <span class="text-[10px] text-slate-400">${msg.time}</span>
+              </div>
+              ${resultsHTML}
+            </div>
+          `;
+        }
+
+        chatContainer.appendChild(msgDiv);
+      });
+
+      // Rola para a mensagem mais recente
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // --- ABRIR DOCUMENTO E GRIFAR TRECHO ---
+    function openDocAtParagraph(fileId, paragraphIndex, searchTerm) {
+      const file = state.files[fileId];
+      if (!file) return;
+
+      state.activeDocId = fileId;
+      document.getElementById('current-doc-title').textContent = file.name;
+      document.getElementById('doc-meta-badge').textContent = `${file.paragraphs.length} parágrafos`;
+
+      const viewer = document.getElementById('doc-viewer-content');
+      viewer.innerHTML = '';
+
+      file.paragraphs.forEach((p, idx) => {
+        const pEl = document.createElement('p');
+        pEl.id = `doc-para-${idx}`;
+        pEl.className = 'p-2 rounded transition';
+
+        if (idx === paragraphIndex) {
+          pEl.classList.add('highlight-active', 'bg-amber-500/10', 'text-amber-100');
+          pEl.innerHTML = highlightText(p, searchTerm);
+        } else {
+          pEl.textContent = p;
+        }
+
+        viewer.appendChild(pEl);
+      });
+
+     função exportBackupJSON() {     
+      if (window.innerWidth < 768) {
+        document.getElementById('mobile-tab-doc').click();
+      }
+
+      // Scroll automático para o parágrafo selecionado
+      setTimeout(() => {
+        const targetPara = document.getElementById(`doc-para-${paragraphIndex}`);
+        if (targetPara) {
+          targetPara.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+
+    // --- FUNÇÕES AUXILIARES DE INTERFACE E MEMÓRIA ---
+    function renderChatsList() {
+      const container = document.getElementById('chats-list');
+      container.innerHTML = '';
+
+      state.chats.forEach(chat => {
+        const isActive = chat.id === state.currentChatId;
+        const btn = document.createElement('button');
+        btn.className = `w-full text-left px-2.5 py-2 rounded-lg text-xs flex items-center justify-between transition ${
+          isActive ? 'bg-indigo-600/30 text-indigo-200 border border-indigo-500/40 font-semibold' : 'text-slate-300 hover:bg-slate-700/50'
+        }`;
+        btn.innerHTML = `
+          <span class="truncate flex items-center gap-1.5">
+            <i class="ph ph-chat-text text-slate-400"></i> ${escapeHTML(chat.title)}
+          </span>
+          <span class="text-[10px] text-slate-500">${chat.messages.length}</span>
+        `;
+        btn.onclick = () => {
+          state.currentChatId = chat.id;
+          saveStateToStorage();
+          renderChatsList();
+          renderChatMessages();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function renderFilesList() {
+      const container = document.getElementById('files-list');
+      const badge = document.getElementById('file-count-badge');
+      const fileKeys = Object.keys(state.files);
+
+      badge.textContent = fileKeys.length;
+
+      if (fileKeys.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-500 italic p-2 text-center">Nenhum arquivo carregado ainda.</p>`;
+        return;
+      }
+
+      container.innerHTML = '';
+      fileKeys.forEach(key => {
+        const f = state.files[key];
+        const div = document.createElement('div');
+        div.className = 'p-2 bg-slate-900/60 border border-slate-700/60 rounded-lg flex items-center justify-between text-xs hover:border-slate-600 transition';
+        div.innerHTML = `
+          <div class="truncate pr-2 cursor-pointer" onclick="openDocAtParagraph('${f.id}', 0, '')">
+            <p class="font-medium text-slate-200 truncate">${escapeHTML(f.name)}</p>
+            <p class="text-[10px] text-slate-400">${f.size} • ${f.paragraphs.length} blocos</p>
+          </div>
+          <button onclick="deleteFile('${f.id}')" title="Excluir arquivo" class="text-slate-500 hover:text-red-400 p-1">
+            <i class="ph ph-trash text-sm"></i>
+          </button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function renderHistoryList() {
+      const container = document.getElementById('history-list');
+      if (state.searchHistory.length === 0) {
+         container.innerHTML = `<p class="text-xs text-slate-500 italic p-2 text-center">Nenhum histórico recente.</p>`; 
+        return;
+      }
+
+      container.innerHTML = '';
+      state.searchHistory.slice(0, 15).forEach(term => {
+        const btn = document.createElement('button');
+        btn.className = 'w-full text-left px-2 py-1.5 rounded text-xs text-slate-300 hover:bg-slate-700/50 hover:text-indigo-300 flex items-center gap-1.5 transition truncate';
+        btn.innerHTML = `<i class="ph ph-magnifying-glass text-slate-500"></i> ${escapeHTML(term)}`;
+        btn.onclick = () => {
+          document.getElementById('chat-input').value = term;
+          document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function updateDocFilterSelect() {
+      const select = document.getElementById('doc-filter-select');
+      select.innerHTML = `<option value="ALL">Todos os Documentos Carregados</option>`;
+      Object.values(state.files).forEach(f => {
+        const opt = document.createElement('option');
+        opt.value = f.id;
+        opt.textContent = f.name;
+        select.appendChild(opt);
+      });
+    }
+
+    function deleteFile(fileId) {
+      delete state.files[fileId];
+      saveStateToStorage();
+      renderFilesList();
+      updateDocFilterSelect();
+    }
+
+    function addSystemChatMessage(text) {
+      const currentChat = state.chats.find(c => c.id === state.currentChatId);
+      if (currentChat) {
+         currentChat.messages.push({ sender: 'system', text: text, time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) }); 
+        saveStateToStorage();
+        renderChatMessages();
+      }
+    }
+
+       // --- UTILITÁRIOS ---   / --- UTILITÁRIOS ---   
+    function highlightText(text, term) {
+      if (!term) return escapeHTML(text);
+      const safeTerm = escapeRegExp(term);
+      const regex = new RegExp(`(${safeTerm})`, 'gi');
+      return escapeHTML(text).replace(regex, `<mark class="bg-amber-400 text-slate-950 px-0.5 rounded font-semibold">$1</mark>`);
+    }
+
+    function escapeHTML(str) {
+      return str.replace(/[&<>'"]/g, 
+        tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+      );
+    }
+
+    function escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
+
+    // --- SALVAMENTO LOCAL & RESPALDO ---
+    function saveStateToStorage() {
+      try {
+        localStorage.setItem('medsearch_state', JSON.stringify(state));
+      } catch (e) {
+             console.warn('Limite de localStorage atingido. Considere exportar backup.');     onsole.warn('Limite de localStorage atingido. Considere exportar backup.');     
+      }
+    }
+
+    function loadStateFromStorage() {
+      const saved = localStorage.getItem('medsearch_state');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          state.files = parsed.files || {};
+          state.chats = parsed.chats || state.chats;
+          state.currentChatId = parsed.currentChatId || state.chats[0].id;
+          state.searchHistory = parsed.searchHistory || [];
+        } catch (e) {
+                  console.error('Erro ao restaurar estado:', e);        onsole.error('Erro ao restaurar estado:', e);        
+         } 
+       } 
+     } 
+
+      função exportBackupJSON() {      unção exportBackupJSON() {      
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `medsearch_backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+           downloadAnchor.click();     ownloadAnchor.click();     
+      downloadAnchor.remove();
+    }
+
+             console.warn('Limite de localStorage atingido. Considere exportar backup.');     onsole.warn('Limite de localStorage atingido. Considere exportar backup.');     
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          const importedState = JSON.parse(event.target.result);
+          if (importedState.files && importedState.chats) {
+            Object.assign(state, importedState);
+            saveStateToStorage();
+            renderChatsList();
+            renderFilesList();
+            renderHistoryList();
+            renderChatMessages();
+            updateDocFilterSelect();
+                  alert('Backup restaurado com sucesso!');      lert('Backup restaurado com sucesso!');      
+          }
+        } catch (err) {
+      função exportBackupJSON() {      unção exportBackupJSON() {      
+               console.error('Erro ao restaurar estado                                                                                                                                                                                                                                                                                                                                                                                                                                                                  :', e);     onsole.error('Erro ao restaurar estado:', e);                                                                                                                                                                                                                                                                                                                                                                                                                                                                        
+      };
+      reader.readAsText(file);
+    }
+  </script>
+</body>
+     função exportBackupJSON() {     unção exportBackupJSON() {     
