@@ -37,7 +37,8 @@ aside h2{font:600 13px/1.2 var(--sans);color:var(--muted);margin:10px 0 0}
 .ib{border:0;background:none;color:var(--muted);cursor:pointer;font-size:15px;padding:6px 8px;border-radius:6px}
 .ib:hover{color:var(--def)}.ib.perigo:hover,.ib.conf{color:var(--err)}
 .ib.conf{font:600 12.5px var(--sans)}
-.drop{border:2px dashed var(--line);border-radius:12px;padding:18px 12px;text-align:center;cursor:pointer;background:var(--bg);transition:border-color .15s,background .15s}
+.drop{border:2px dashed var(--line);border-radius:12px;padding:18px 12px;text-align:center;background:var(--bg);transition:border-color .15s,background .15s}
+.cen{justify-content:center;margin-top:10px}
 .drop:hover,.drop.over{border-color:var(--def);background:var(--def-bg)}
 .drop.off{opacity:.5;pointer-events:none}
 .drop strong{display:block;font-size:14.5px}.drop span{font-size:12.5px;color:var(--muted)}
@@ -129,11 +130,16 @@ button:focus-visible,.drop:focus-visible,summary:focus-visible{outline:3px solid
     <h2>Conversas</h2>
     <ul class="convs" id="convs"></ul>
     <h2>Arquivos desta conversa</h2>
-    <label class="drop off" id="drop" tabindex="0">
-      <input type="file" id="inp" multiple accept=".pdf,.txt,.md,.html,.htm">
-      <strong>Soltar arquivos aqui</strong>
-      <span>ou clique para escolher · PDF, TXT, MD</span>
-    </label>
+    <div class="drop off" id="drop">
+      <strong>Solte arquivos ou pastas aqui</strong>
+      <span>PDF, TXT ou MD</span>
+      <div class="linha cen">
+        <button class="mini" id="bArq" type="button">Escolher arquivos</button>
+        <button class="mini" id="bPasta" type="button">Escolher pasta</button>
+      </div>
+      <input type="file" id="inp" multiple accept=".pdf,.txt,.md,.html,.htm" hidden>
+      <input type="file" id="inpPasta" webkitdirectory multiple hidden>
+    </div>
     <ul class="files" id="files" aria-live="polite"></ul>
 
     <h2>Backup</h2>
@@ -305,9 +311,47 @@ async function criar(){
 var drop=$("drop"),inp=$("inp");
 ["dragenter","dragover"].forEach(function(ev){drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.add("over")})});
 ["dragleave","drop"].forEach(function(ev){drop.addEventListener(ev,function(e){e.preventDefault();drop.classList.remove("over")})});
-drop.addEventListener("drop",function(e){addFiles(e.dataTransfer.files)});
-drop.addEventListener("keydown",function(e){if(e.key==="Enter"||e.key===" "){e.preventDefault();inp.click()}});
-inp.addEventListener("change",function(){addFiles(inp.files);inp.value=""});
+var OK_EXT=/\.(pdf|txt|md|html?)$/i,inpPasta=$("inpPasta");
+function soSuportados(l){return Array.prototype.slice.call(l).filter(function(f){return OK_EXT.test(f.name)})}
+function lerEntrada(en,out){return new Promise(function(res){
+  if(en.isFile){en.file(function(f){if(OK_EXT.test(f.name))out.push(f);res()},function(){res()})}
+  else if(en.isDirectory){var rd=en.createReader(),all=[];
+    (function ler(){rd.readEntries(async function(es){
+      if(!es.length){for(var i=0;i<all.length;i++)await lerEntrada(all[i],out);res()}
+      else{all=all.concat(Array.prototype.slice.call(es));ler()}},function(){res()})})()}
+  else res()})}
+async function lerPasta(dir,out){
+  for await(var par of dir.entries()){
+    if(par[1].kind==="file"){if(OK_EXT.test(par[0]))out.push(await par[1].getFile())}
+    else await lerPasta(par[1],out);
+  }
+}
+drop.addEventListener("drop",async function(e){
+  var its=e.dataTransfer.items,out=[];
+  if(its&&its.length&&its[0].webkitGetAsEntry){
+    var ents=[];for(var i=0;i<its.length;i++){var en=its[i].webkitGetAsEntry();if(en)ents.push(en)}
+    for(var j=0;j<ents.length;j++)await lerEntrada(ents[j],out);
+    addFiles(out);
+  }else addFiles(soSuportados(e.dataTransfer.files));
+});
+$("bArq").addEventListener("click",async function(){
+  if(window.showOpenFilePicker){
+    try{
+      var hs=await showOpenFilePicker({multiple:true,startIn:"downloads",types:[{description:"Documentos",accept:{"application/pdf":[".pdf"],"text/plain":[".txt",".md"],"text/html":[".html",".htm"]}}]});
+      addFiles(await Promise.all(hs.map(function(x){return x.getFile()})));return;
+    }catch(e){if(e&&e.name==="AbortError")return}
+  }
+  inp.click();
+});
+$("bPasta").addEventListener("click",async function(){
+  if(window.showDirectoryPicker){
+    try{var dir=await showDirectoryPicker({startIn:"downloads"}),out=[];await lerPasta(dir,out);addFiles(out);return}
+    catch(e){if(e&&e.name==="AbortError")return}
+  }
+  inpPasta.click();
+});
+inp.addEventListener("change",function(){addFiles(soSuportados(inp.files));inp.value=""});
+inpPasta.addEventListener("change",function(){addFiles(soSuportados(inpPasta.files));inpPasta.value=""});
 window.addEventListener("dragover",function(e){e.preventDefault()});
 window.addEventListener("drop",function(e){e.preventDefault()});
 
@@ -327,6 +371,7 @@ async function extractPdf(buf,onp){
 async function addFiles(list){
   if(!loadedId){notice="Crie uma conversa antes de adicionar arquivos.";renderMain();return}
   var cid=loadedId,arr=Array.prototype.slice.call(list);
+  if(!arr.length){notice="Não encontrei PDF, TXT ou MD para adicionar.";renderMain();return}
   for(var k=0;k<arr.length;k++){
     var file=arr[k],p={name:file.name,status:"Lendo…",warn:false};prog.push(p);renderFiles();
     try{
